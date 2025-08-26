@@ -77,7 +77,7 @@ export class ContactsStack extends cdk.Stack {
     fargateService.targetGroup.configureHealthCheck({ path: "/" }); // nginx will 200 at “/”
 
     // Allow ECS tasks to connect to the database
-    dbCluster.connections.allowDefaultPortFrom(fargateService.service, 'ECS tasks → Aurora');
+    dbCluster.connections.allowDefaultPortFrom(fargateService.service, 'ECS tasks to Aurora');
     // Secrets must be readable by BOTH the task role AND the *execution* role:
     dbCluster.secret!.grantRead(fargateService.taskDefinition.taskRole);
     dbCluster.secret!.grantRead(fargateService.taskDefinition.executionRole!);
