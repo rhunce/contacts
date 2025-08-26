@@ -32,6 +32,11 @@ jobs:
       working-directory: ./infra
       run: npm ci
 
+    - name: CDK Bootstrap
+      working-directory: ./infra
+      run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
+      continue-on-error: true
+
     - name: Deploy CDK Stack
       working-directory: ./infra
       run: npx cdk deploy --require-approval never
