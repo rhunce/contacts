@@ -35,6 +35,10 @@ jobs:
     - name: CDK Bootstrap
       working-directory: ./infra
       run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
+      env:
+        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
+        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
+        APP_NAME: ${{ vars.APP_NAME }}
       continue-on-error: true
 
     - name: Deploy CDK Stack
