@@ -1,0 +1,51 @@
+name: Deploy CDK Stack
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: infra/package-lock.json
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.CDK_DEFAULT_REGION }}
+
+    - name: Install dependencies
+      working-directory: ./infra
+      run: npm ci
+
+    - name: Build TypeScript
+      working-directory: ./infra
+      run: npm run build
+
+    # TODO: Delete this if confirmed not needed
+    # - name: CDK Bootstrap (if needed)
+    #   working-directory: ./infra
+    #   run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
+    #   continue-on-error: true
+
+    - name: Deploy CDK Stack
+      working-directory: ./infra
+      run: npx cdk deploy --require-approval never
+      env:
+        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
+        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
+        APP_NAME: ${{ vars.APP_NAME }}
