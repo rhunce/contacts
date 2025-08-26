@@ -32,19 +32,9 @@ jobs:
       working-directory: ./infra
       run: npm ci
 
-    - name: Build TypeScript
-      working-directory: ./infra
-      run: npm run build
-
-    # TODO: Delete this if confirmed not needed
-    # - name: CDK Bootstrap (if needed)
-    #   working-directory: ./infra
-    #   run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
-    #   continue-on-error: true
-
     - name: Deploy CDK Stack
       working-directory: ./infra
-      run: npx cdk deploy --require-approval never
+      run: npx ts-node bin/contacts.ts
       env:
         CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
         CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
