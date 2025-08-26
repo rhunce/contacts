@@ -18,7 +18,7 @@ if (!account || !region || !appName) {
   throw new Error(`Required environment variables are not set: ${missingVars.join(', ')}`);
 }
 
-new ContactsStack(app, 'ContactsStack', {
+new ContactsStack(app, `${appName}Stack`, {
   env: {
     account,
     region
