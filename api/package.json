@@ -4,7 +4,7 @@
   "description": "Contacts API backend with Express.js and Prisma",
   "main": "dist/index.js",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts"
   },
   "scripts": {
     "build": "tsc",
@@ -12,8 +12,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:seed": "ts-node src/seed.ts"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
