@@ -47,7 +47,7 @@ export class ContactsStack extends cdk.Stack {
 
     const sessionSecret = new secretsmanager.Secret(this, `${props.appName}SessionSecret`);
 
-    // Redis ElastiCache Cluster
+    // Redis ElastiCache Replication Group (supports encryption)
     const redisSubnetGroup = new elasticache.CfnSubnetGroup(this, `${props.appName}RedisSubnetGroup`, {
       description: 'Subnet group for Redis cluster',
       subnetIds: vpc.privateSubnets.map(subnet => subnet.subnetId),
@@ -55,14 +55,17 @@ export class ContactsStack extends cdk.Stack {
 
     const redisSecurityGroup = new ec2.SecurityGroup(this, `${props.appName}RedisSecurityGroup`, { vpc });
 
-    const redisCluster = new elasticache.CfnCacheCluster(this, `${props.appName}Redis`, {
-      engine: 'redis',
+    const redisReplicationGroup = new elasticache.CfnReplicationGroup(this, `${props.appName}Redis`, {
+      replicationGroupDescription: 'Redis cluster for session storage',
       cacheNodeType: 'cache.t3.micro',
-      numCacheNodes: 1,
-      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+      numCacheClusters: 1,
+      automaticFailoverEnabled: false,
+      multiAzEnabled: false,
       cacheSubnetGroupName: redisSubnetGroup.ref,
+      securityGroupIds: [redisSecurityGroup.securityGroupId],
       port: 6379,
       transitEncryptionEnabled: true,
+      atRestEncryptionEnabled: true,
     });
 
     // ECS Fargate Service with Load Balancer
@@ -87,7 +90,7 @@ export class ContactsStack extends cdk.Stack {
           REDIS_URL: ecs.Secret.fromSecretsManager(
             new secretsmanager.Secret(this, `${props.appName}RedisUrl`, {
               secretStringValue: cdk.SecretValue.unsafePlainText(
-                `rediss://${redisCluster.attrRedisEndpointAddress}:6380`
+                `rediss://${redisReplicationGroup.attrPrimaryEndPointAddress}:6379`
               ),
             })
           )
@@ -107,7 +110,7 @@ export class ContactsStack extends cdk.Stack {
     // Allow ECS tasks to connect to Redis (TLS port)
     redisSecurityGroup.addIngressRule(
       fargateService.service.connections.securityGroups[0],
-      ec2.Port.tcp(6380),
+      ec2.Port.tcp(6379),
       'ECS tasks to Redis TLS'
     );
     
@@ -128,7 +131,7 @@ export class ContactsStack extends cdk.Stack {
     });
 
     new cdk.CfnOutput(this, "RedisEndpoint", {
-      value: redisCluster.attrRedisEndpointAddress,
+      value: redisReplicationGroup.attrPrimaryEndPointAddress,
       description: "Redis ElastiCache Endpoint"
     });
 
