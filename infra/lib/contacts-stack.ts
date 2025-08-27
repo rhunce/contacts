@@ -57,6 +57,7 @@ export class ContactsStack extends cdk.Stack {
 
     const redisReplicationGroup = new elasticache.CfnReplicationGroup(this, `${props.appName}Redis`, {
       replicationGroupDescription: 'Redis cluster for session storage',
+      engine: 'redis',
       cacheNodeType: 'cache.t3.micro',
       numCacheClusters: 1,
       automaticFailoverEnabled: false,
