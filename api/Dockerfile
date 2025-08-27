@@ -34,12 +34,15 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application
+# Copy built application and Prisma files
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
 
-# Switch to non-root user
-USER nodejs
+# Copy startup script
+COPY --from=builder --chown=nodejs:nodejs /app/scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
 
 # Expose port
 EXPOSE 3000
@@ -48,5 +51,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Start the application with migrations
+CMD ["./scripts/start.sh"]

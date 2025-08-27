@@ -7,14 +7,9 @@ async function initializeDatabase() {
   try {
     console.log('Initializing database...');
 
-    // Run migrations
-    console.log('Running database migrations...');
-    const { execSync } = require('child_process');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-
-    // Generate Prisma client
-    console.log('Generating Prisma client...');
-    execSync('npx prisma generate', { stdio: 'inherit' });
+    // Test database connection
+    await prisma.$connect();
+    console.log('Database connection successful');
 
     // Check if we need to seed the database
     const userCount = await prisma.user.count();
