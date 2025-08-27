@@ -60,8 +60,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/login', authRoutes);
-app.use('/logout', authRoutes);
+app.use('/', authRoutes);
 app.use('/contact', contactRoutes);
 app.use('/contacts', contactRoutes);
 app.use('/contact-history', contactHistoryRoutes);
@@ -96,37 +95,42 @@ async function startServer() {
     // Initialize database (run migrations and seed if needed)
     await initializeDatabase();
     
-    // Initialize Redis for sessions
-    const redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-      socket: {
-        tls: process.env.NODE_ENV === 'production',
-        rejectUnauthorized: false
-      }
-    });
+    // Initialize Redis for sessions (only if REDIS_URL is provided)
+    if (process.env.REDIS_URL) {
+      const redisClient = createClient({
+        url: process.env.REDIS_URL,
+        socket: {
+          tls: process.env.NODE_ENV === 'production',
+          rejectUnauthorized: false
+        }
+      });
 
-    // Connect to Redis
-    await redisClient.connect();
-    console.log('Connected to Redis for session storage');
+      // Connect to Redis
+      await redisClient.connect();
+      console.log('Connected to Redis for session storage');
 
-    // Update session configuration with Redis store
-    const redisStore = new RedisStore({
-      client: redisClient,
-      prefix: 'sess:',
-    });
+      // Update session configuration with Redis store
+      const redisStore = new RedisStore({
+        client: redisClient,
+        prefix: 'sess:',
+      });
 
-    // Update the session middleware with Redis store
-    app.use(session({
-      store: redisStore,
-      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-      }
-    }));
+      // Update the session middleware with Redis store
+      app.use(session({
+        store: redisStore,
+        secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          secure: process.env.NODE_ENV === 'production',
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        }
+      }));
+    } else {
+      console.log('Redis not configured, using in-memory session store');
+      // Session middleware is already configured above with default in-memory store
+    }
     
     // Start server
     app.listen(PORT, () => {
