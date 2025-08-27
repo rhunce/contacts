@@ -24,6 +24,9 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
+# Install OpenSSL and other required packages for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
