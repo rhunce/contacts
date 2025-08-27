@@ -62,6 +62,7 @@ export class ContactsStack extends cdk.Stack {
       vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
       cacheSubnetGroupName: redisSubnetGroup.ref,
       port: 6379,
+      transitEncryptionEnabled: true,
     });
 
     // ECS Fargate Service with Load Balancer
@@ -86,7 +87,7 @@ export class ContactsStack extends cdk.Stack {
           REDIS_URL: ecs.Secret.fromSecretsManager(
             new secretsmanager.Secret(this, `${props.appName}RedisUrl`, {
               secretStringValue: cdk.SecretValue.unsafePlainText(
-                `redis://${redisCluster.attrRedisEndpointAddress}:${redisCluster.attrRedisEndpointPort}`
+                `rediss://${redisCluster.attrRedisEndpointAddress}:6380`
               ),
             })
           )
@@ -103,11 +104,11 @@ export class ContactsStack extends cdk.Stack {
     // Allow ECS tasks to connect to the database
     dbCluster.connections.allowDefaultPortFrom(fargateService.service, 'ECS tasks to Aurora');
     
-    // Allow ECS tasks to connect to Redis
+    // Allow ECS tasks to connect to Redis (TLS port)
     redisSecurityGroup.addIngressRule(
       fargateService.service.connections.securityGroups[0],
-      ec2.Port.tcp(6379),
-      'ECS tasks to Redis'
+      ec2.Port.tcp(6380),
+      'ECS tasks to Redis TLS'
     );
     
     // Secrets must be readable by BOTH the task role AND the *execution* role:
