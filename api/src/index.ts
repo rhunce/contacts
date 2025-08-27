@@ -48,7 +48,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // Always secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
@@ -100,7 +100,7 @@ async function startServer() {
       const redisClient = createClient({
         url: process.env.REDIS_URL,
         socket: {
-          tls: process.env.NODE_ENV === 'production',
+          tls: true, // Always use TLS in production
           rejectUnauthorized: false
         }
       });
@@ -122,7 +122,7 @@ async function startServer() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: process.env.NODE_ENV === 'production',
+          secure: true, // Always secure in production
           httpOnly: true,
           maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
@@ -135,7 +135,7 @@ async function startServer() {
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log('Environment: production');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

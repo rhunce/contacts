@@ -77,7 +77,6 @@ export class ContactsStack extends cdk.Stack {
         image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../api')),
         containerPort: 3000,
         environment: {
-          NODE_ENV: "production",
           PORT: "3000",
         },
         // Sensitive values: inject as secrets
