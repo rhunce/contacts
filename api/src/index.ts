@@ -3,6 +3,8 @@ import session from 'express-session';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import RedisStore from 'connect-redis';
+import { createClient } from 'redis';
 import { prisma } from './lib/prisma';
 import { initializeDatabase } from './init-db';
 import { CustomSession } from './types';
@@ -40,7 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 // Response interceptor middleware (add this before routes)
 app.use(responseInterceptor);
 
-// Session configuration
+// Session configuration (will be updated with Redis store in startServer)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
   resave: false,
@@ -93,6 +95,38 @@ async function startServer() {
   try {
     // Initialize database (run migrations and seed if needed)
     await initializeDatabase();
+    
+    // Initialize Redis for sessions
+    const redisClient = createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        tls: process.env.NODE_ENV === 'production',
+        rejectUnauthorized: false
+      }
+    });
+
+    // Connect to Redis
+    await redisClient.connect();
+    console.log('Connected to Redis for session storage');
+
+    // Update session configuration with Redis store
+    const redisStore = new RedisStore({
+      client: redisClient,
+      prefix: 'sess:',
+    });
+
+    // Update the session middleware with Redis store
+    app.use(session({
+      store: redisStore,
+      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      }
+    }));
     
     // Start server
     app.listen(PORT, () => {
