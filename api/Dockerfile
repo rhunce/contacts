@@ -20,16 +20,12 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:18 AS production
 
 WORKDIR /app
 
-# Install OpenSSL and other required packages for Prisma
-RUN apk add --no-cache openssl libc6-compat
-
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+RUN groupadd -r nodejs && useradd -r -g nodejs nodejs
 
 # Copy package files
 COPY package*.json ./
