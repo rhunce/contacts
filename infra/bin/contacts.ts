@@ -29,6 +29,8 @@ const backendStack = new BackendStack(app, `${appName}BackendStack`, {
 const frontendStack = new FrontendStack(app, `${appName}FrontendStack`, {
   env: { account, region },
   appName,
+  rootDomain,
+  frontendSubdomain: 'www'
 });
 
 frontendStack.addDependency(backendStack);
