@@ -45,4 +45,32 @@ export class AuthService {
   async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   }
+
+  async getUserById(userId: string): Promise<InternalUserDto | null> {
+    return this.userRepository.findById(userId);
+  }
+
+  async getUserByEmail(email: string): Promise<InternalUserDto | null> {
+    return this.userRepository.findByEmail(email);
+  }
+
+  async createUser(userData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }): Promise<InternalUserDto> {
+    // Hash the password
+    const hashedPassword = await this.hashPassword(userData.password);
+
+    // Create user
+    const user = await this.userRepository.create({
+      email: userData.email,
+      password: hashedPassword,
+      firstName: userData.firstName,
+      lastName: userData.lastName
+    });
+
+    return user;
+  }
 }

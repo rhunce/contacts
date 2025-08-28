@@ -6,6 +6,71 @@ import { CustomSession } from '../types';
 const router = Router();
 const authService = new AuthService();
 
+// GET /me - Get current user
+router.get('/me', async (req: Request, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    
+    if (!session.userId) {
+      return res.unauthorized('Not authenticated');
+    }
+
+    const user = await authService.getUserById(session.userId);
+    if (!user) {
+      return res.unauthorized('User not found');
+    }
+
+    res.success({ user });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.error('Internal server error');
+  }
+});
+
+// POST /register - Register new user
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+
+    if (!email || !password || !firstName || !lastName) {
+      return res.validationError([
+        { message: 'Email, password, firstName, and lastName are required', field: 'credentials' }
+      ]);
+    }
+
+    // Check if user already exists
+    const existingUser = await authService.getUserByEmail(email);
+    if (existingUser) {
+      return res.validationError([
+        { message: 'User with this email already exists', field: 'email' }
+      ]);
+    }
+
+    // Create new user
+    const newUser = await authService.createUser({
+      email,
+      password,
+      firstName,
+      lastName
+    });
+
+    // Create user session
+    const userSession = await authService.createUserSession(newUser);
+
+    // Set session
+    (req.session as CustomSession).userId = newUser.id;
+    (req.session as CustomSession).user = userSession;
+
+    res.success({
+      message: 'Registration successful',
+      user: userSession
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.error('Internal server error');
+  }
+});
+
 // POST /login - Login user
 router.post('/login', async (req: Request, res: Response) => {
   try {
