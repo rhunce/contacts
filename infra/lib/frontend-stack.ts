@@ -17,7 +17,7 @@ export class FrontendStack extends cdk.Stack {
 
     // S3 Bucket for frontend files
     this.bucket = new s3.Bucket(this, `${props.appName}FrontendBucket`, {
-      bucketName: `${props.appName}-frontend-${this.account}`,
+      bucketName: `${props.appName.toLowerCase()}-frontend-${this.account}`,
       publicReadAccess: false,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,

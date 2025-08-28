@@ -54,7 +54,7 @@ jobs:
         CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
         CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
         APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: production
+        NODE_ENV: ${{ vars.NODE_ENV }}
 
   deploy-frontend:
     needs: deploy-backend
@@ -98,7 +98,7 @@ jobs:
         CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
         CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
         APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: production
+        NODE_ENV: ${{ vars.NODE_ENV }}
 
     - name: Setup Node.js for frontend build
       uses: actions/setup-node@v4
@@ -117,7 +117,7 @@ jobs:
         export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.alb-url }}"
         npm run build
       env:
-        NODE_ENV: production
+        NODE_ENV: ${{ vars.NODE_ENV }}
 
     - name: Deploy frontend to S3
       working-directory: ./frontend
@@ -167,4 +167,4 @@ jobs:
         aws ecs update-service --cluster ${APP_NAME}EcsCluster --service $SERVICE_NAME --task-definition $NEW_TASK_DEF_ARN
       env:
         APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: production
+        NODE_ENV: ${{ vars.NODE_ENV }}
