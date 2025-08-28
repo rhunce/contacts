@@ -33,7 +33,7 @@ export class FrontendStack extends cdk.Stack {
     this.bucket.grantRead(originAccessIdentity);
 
     // CloudFront Distribution
-    this.distribution = new cloudfront.Distribution(this, `${props.appName}FrontendDistribution`, {
+    this.distribution = new cloudfront.Distribution(this, `${props.appName}FrontendDistributionV2`, {
       defaultBehavior: {
         origin: new origins.S3Origin(this.bucket, {
           originAccessIdentity,
