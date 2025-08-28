@@ -248,8 +248,23 @@ jobs:
           # Add new CORS_ORIGIN
           UPDATED_TASK_DEF=$(echo "$TASK_DEF_NO_CORS" | jq '.containerDefinitions[0].environment += [{"name": "CORS_ORIGIN", "value": "'${{ needs.deploy-frontend.outputs.frontend-url }}'"}]')
           
+          # Clean the task definition to only include fields accepted by register-task-definition
+          CLEAN_TASK_DEF=$(echo "$UPDATED_TASK_DEF" | jq '{
+            family: .family,
+            taskRoleArn: .taskRoleArn,
+            executionRoleArn: .executionRoleArn,
+            networkMode: .networkMode,
+            containerDefinitions: .containerDefinitions,
+            volumes: .volumes,
+            placementConstraints: .placementConstraints,
+            requiresCompatibilities: .requiresCompatibilities,
+            cpu: .cpu,
+            memory: .memory,
+            tags: .tags
+          }')
+          
           # Register new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$UPDATED_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$CLEAN_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
           
           if [ -z "$NEW_TASK_DEF_ARN" ]; then
             echo "ERROR: Failed to register new task definition"
