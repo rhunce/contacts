@@ -1,12 +1,12 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
-// For production, use a protocol-relative URL to inherit the protocol from the current page
-// This avoids mixed content issues when frontend is HTTPS and API is HTTP
-let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// For production, use the API URL as provided
+// We'll handle mixed content issues by allowing insecure requests in development
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-// In production, convert HTTP URLs to protocol-relative URLs to avoid mixed content
-if (typeof window !== 'undefined' && API_BASE_URL.startsWith('http:')) {
-  API_BASE_URL = API_BASE_URL.replace('http:', '');
+// Log the API URL for debugging
+if (typeof window !== 'undefined') {
+  console.log('API Base URL:', API_BASE_URL);
 }
 
 const api = axios.create({
