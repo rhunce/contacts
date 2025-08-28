@@ -38,7 +38,7 @@ export class FrontendStack extends cdk.Stack {
         origin: new origins.S3Origin(this.bucket, {
           originAccessIdentity,
         }),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.ALLOW_ALL,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         originRequestPolicy: cloudfront.OriginRequestPolicy.CORS_S3_ORIGIN,
       },
@@ -59,7 +59,7 @@ export class FrontendStack extends cdk.Stack {
 
     // Outputs
     new cdk.CfnOutput(this, "FrontendUrl", {
-      value: `https://${this.distribution.distributionDomainName}`,
+      value: `http://${this.distribution.distributionDomainName}`,
       description: "CloudFront URL for the Frontend",
       exportName: `${props.appName}-frontend-url`
     });

@@ -1,5 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
+// For production, use a relative URL to inherit the protocol from the current page
+// This avoids mixed content issues when frontend is HTTPS and API is HTTP
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const api = axios.create({

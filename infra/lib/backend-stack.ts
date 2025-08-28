@@ -76,8 +76,6 @@ export class BackendStack extends cdk.Stack {
     const fargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${props.appName}FargateService`, {
       cluster: new ecs.Cluster(this, `${props.appName}EcsCluster`, { vpc: this.vpc }),
       publicLoadBalancer: true,
-      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTPS,
-      redirectHTTP: true,
       taskImageOptions: {
         image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../backend')),
         containerPort: 3000,
@@ -129,7 +127,7 @@ export class BackendStack extends cdk.Stack {
 
     // Outputs
     new cdk.CfnOutput(this, "AlbUrl", {
-      value: `https://${fargateService.loadBalancer.loadBalancerDnsName}`,
+      value: `http://${fargateService.loadBalancer.loadBalancerDnsName}`,
       description: "Load Balancer URL for the Contacts API",
       exportName: `${props.appName}-alb-url`
     });
