@@ -157,7 +157,7 @@ jobs:
         # Find the cluster that contains our app name (should be the backend cluster)
         CLUSTER_NAME=""
         for cluster_arn in $CLUSTER_ARNS; do
-          cluster_name=$(echo "$cluster_arn" | cut -d'/' -f3)
+          cluster_name=$(echo "$cluster_arn" | rev | cut -d'/' -f1 | rev)
           echo "Checking cluster: $cluster_name"
           echo "  - Contains ${APP_NAME}: $([[ "$cluster_name" == *"${APP_NAME}"* ]] && echo "YES" || echo "NO")"
           echo "  - Contains Backend: $([[ "$cluster_name" == *"Backend"* ]] && echo "YES" || echo "NO")"
