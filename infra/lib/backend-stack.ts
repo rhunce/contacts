@@ -103,7 +103,11 @@ export class BackendStack extends cdk.Stack {
         taskImageOptions: {
           image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../backend')),
           containerPort: 3000,
-          environment: { PORT: '3000', NODE_ENV: 'production' },
+          environment: { 
+            PORT: '3000', 
+            NODE_ENV: 'production',
+            CORS_ORIGIN: process.env.CORS_ORIGIN || `https://${props.rootDomain}`
+          },
           secrets: {
             PGHOST: ecs.Secret.fromSecretsManager(dbCluster.secret!, 'host'),
             PGPORT: ecs.Secret.fromSecretsManager(dbCluster.secret!, 'port'),

@@ -55,6 +55,10 @@ jobs:
       id: deploy
       working-directory: ./infra
       run: |
+        # Set CORS_ORIGIN for the backend deployment
+        export CORS_ORIGIN="https://${ROOT_DOMAIN}"
+        echo "Setting CORS_ORIGIN to: $CORS_ORIGIN"
+        
         npx cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
         API_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' --output text)
@@ -126,89 +130,11 @@ jobs:
     - name: Invalidate CloudFront cache
       run: aws cloudfront create-invalidation --distribution-id ${{ steps.deploy-frontend.outputs.cloudfront-id }} --paths "/*"
 
-  update-api-cors:
-    needs: [deploy-backend, deploy-frontend]
-    runs-on: ubuntu-latest
+    - name: Deployment Summary
+      run: |
+        echo "🎉 Full stack deployment completed successfully!"
+        echo "🌐 Frontend URL: ${{ steps.deploy-frontend.outputs.frontend-url }}"
+        echo "🔗 Backend API URL: ${{ needs.deploy-backend.outputs.api-url }}"
+        echo "🔒 CORS configured for: https://${ROOT_DOMAIN}"
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.CDK_DEFAULT_REGION }}
-
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Update API CORS configuration
-        env:
-          APP_NAME: ${{ env.APP_NAME }}
-          FRONTEND_URL: ${{ needs.deploy-frontend.outputs.frontend-url }}
-        run: |
-          set -euo pipefail
-
-          STACK_NAME="${APP_NAME}BackendStack"
-
-          # Get ECS cluster and service from CFN resources
-          CLUSTER_NAME=$(aws cloudformation list-stack-resources \
-            --stack-name "$STACK_NAME" \
-            --query 'StackResourceSummaries[?ResourceType==`AWS::ECS::Cluster`].PhysicalResourceId' \
-            --output text)
-
-          SERVICE_NAME=$(aws cloudformation list-stack-resources \
-            --stack-name "$STACK_NAME" \
-            --query 'StackResourceSummaries[?ResourceType==`AWS::ECS::Service`].PhysicalResourceId' \
-            --output text)
-
-          if [ -z "$CLUSTER_NAME" ] || [ -z "$SERVICE_NAME" ]; then
-            echo "ERROR: Could not find ECS Cluster or Service in stack $STACK_NAME"
-            exit 1
-          fi
-
-          echo "Cluster: $CLUSTER_NAME"
-          echo "Service: $SERVICE_NAME"
-          echo "Frontend URL (CORS_ORIGIN): $FRONTEND_URL"
-
-          # Fetch current task definition
-          TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query 'services[0].taskDefinition' --output text)
-          TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' --output json)
-
-          # Existing CORS_ORIGIN?
-          EXISTING_CORS=$(echo "$TASK_DEF_JSON" | jq -r '.containerDefinitions[0].environment[]? | select(.name=="CORS_ORIGIN") | .value // empty')
-
-          if [ "$EXISTING_CORS" = "$FRONTEND_URL" ]; then
-            echo "CORS_ORIGIN already set to $FRONTEND_URL"
-            exit 0
-          fi
-
-          echo "Updating CORS_ORIGIN -> $FRONTEND_URL"
-
-          # Remove existing CORS_ORIGIN entry if present
-          TASK_DEF_NO_CORS=$(echo "$TASK_DEF_JSON" | jq '(.containerDefinitions[0].environment) |= (map(select(.name!="CORS_ORIGIN")))')
-
-          # Add/append new CORS_ORIGIN
-          UPDATED_TASK_DEF=$(echo "$TASK_DEF_NO_CORS" | jq --arg ORIGIN "$FRONTEND_URL" '.containerDefinitions[0].environment += [{"name":"CORS_ORIGIN","value":$ORIGIN}]')
-
-          # Keep only accepted fields
-          CLEAN_TASK_DEF=$(echo "$UPDATED_TASK_DEF" | jq '{
-            family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions,
-            volumes, placementConstraints, requiresCompatibilities, cpu, memory
-          }')
-
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$CLEAN_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
-
-          aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --task-definition "$NEW_TASK_DEF_ARN"
-
-          echo "Waiting for service to stabilize..."
-          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
-
-      - name: Output deployment info
-        run: |
-          echo "Full stack deployment completed successfully!"
-          echo "Frontend URL: ${{ needs.deploy-frontend.outputs.frontend-url }}"
-          echo "Backend ALB URL (HTTP redirected): ${{ needs.deploy-backend.outputs.alb-url }}"
-          echo "Backend API URL (HTTPS): ${{ needs.deploy-backend.outputs.api-url }}"
+  # CORS is now set during backend deployment, no post-deployment update needed
