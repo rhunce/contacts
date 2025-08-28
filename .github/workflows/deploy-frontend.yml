@@ -1,31 +1,24 @@
-name: Deploy Full Stack
+name: Deploy Frontend
 
 on:
   push:
     branches: [ main, master ]
     paths:
-      - 'backend/**'
       - 'frontend/**'
-      - 'infra/**'
-      - '.github/workflows/deploy.yml'
-  workflow_dispatch: # Manual trigger for full deployment
+      - 'infra/lib/frontend-stack.ts'
+      - 'infra/bin/contacts.ts'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch: # Manual trigger
 
 jobs:
-  deploy-backend:
+  get-backend-url:
     runs-on: ubuntu-latest
     outputs:
-      alb-url: ${{ steps.deploy.outputs.alb-url }}
+      alb-url: ${{ steps.get-url.outputs.alb-url }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: infra/package-lock.json
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -34,34 +27,16 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ vars.CDK_DEFAULT_REGION }}
 
-    - name: Install dependencies
-      working-directory: ./infra
-      run: npm ci
-
-    - name: CDK Bootstrap
-      working-directory: ./infra
-      run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
-      env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
-        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
-        APP_NAME: ${{ vars.APP_NAME }}
-      continue-on-error: true
-
-    - name: Deploy Backend Stack
-      id: deploy
-      working-directory: ./infra
+    - name: Get Backend ALB URL
+      id: get-url
       run: |
-        npx cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
         echo "alb-url=$ALB_URL" >> $GITHUB_OUTPUT
       env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
-        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
         APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: ${{ vars.NODE_ENV }}
 
   deploy-frontend:
-    needs: deploy-backend
+    needs: get-backend-url
     runs-on: ubuntu-latest
     outputs:
       frontend-url: ${{ steps.deploy-frontend.outputs.frontend-url }}
@@ -118,7 +93,7 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       run: |
-        export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.alb-url }}"
+        export NEXT_PUBLIC_API_URL="${{ needs.get-backend-url.outputs.alb-url }}"
         npm run build
       env:
         NODE_ENV: ${{ vars.NODE_ENV }}
@@ -138,7 +113,7 @@ jobs:
         APP_NAME: ${{ vars.APP_NAME }}
 
   update-api-cors:
-    needs: [deploy-backend, deploy-frontend]
+    needs: [get-backend-url, deploy-frontend]
     runs-on: ubuntu-latest
     
     steps:
@@ -175,6 +150,6 @@ jobs:
 
     - name: Output deployment info
       run: |
-        echo "Full stack deployment completed successfully!"
+        echo "Frontend deployed successfully!"
         echo "Frontend URL: ${{ needs.deploy-frontend.outputs.frontend-url }}"
-        echo "Backend URL: ${{ needs.deploy-backend.outputs.alb-url }}"
+        echo "Backend URL: ${{ needs.get-backend-url.outputs.alb-url }}"

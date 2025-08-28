@@ -48,8 +48,8 @@ const ContactHistoryPage: React.FC = () => {
         contactService.getContactHistory(contactId),
       ]);
       
-      setContact(contactData.data);
-      setHistory(historyData.data || []);
+      setContact(contactData);
+      setHistory(historyData || []);
     } catch (error: any) {
       setError(error.message || 'Failed to load contact history');
       toast.error(error.message || 'Failed to load contact history');

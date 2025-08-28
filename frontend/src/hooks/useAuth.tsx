@@ -31,24 +31,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
-      const response = await authService.getCurrentUser();
-      if (response.status === 200 && response.data) {
-        setUser(response.data);
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
       }
     } catch (error) {
       console.log('Not authenticated');
-      // Clear any stale user data
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
-
+  
   const refreshUser = async () => {
     try {
-      const response = await authService.getCurrentUser();
-      if (response.status === 200 && response.data) {
-        setUser(response.data);
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        setUser(userData);
       } else {
         setUser(null);
       }
