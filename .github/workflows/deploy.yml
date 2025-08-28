@@ -9,6 +9,13 @@ on:
       - 'infra/**'
   workflow_dispatch: # Manual trigger
 
+env:
+  NODE_VERSION: '18'
+  CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
+  CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
+  APP_NAME: ${{ vars.APP_NAME }}
+  NODE_ENV: ${{ vars.NODE_ENV }}
+
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
@@ -22,7 +29,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: infra/package-lock.json
 
@@ -31,7 +38,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ vars.CDK_DEFAULT_REGION }}
+        aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
     - name: Install dependencies
       working-directory: ./infra
@@ -39,11 +46,7 @@ jobs:
 
     - name: CDK Bootstrap
       working-directory: ./infra
-      run: npx cdk bootstrap aws://${{ secrets.CDK_DEFAULT_ACCOUNT }}/${{ vars.CDK_DEFAULT_REGION }}
-      env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
-        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
-        APP_NAME: ${{ vars.APP_NAME }}
+      run: npx cdk bootstrap aws://${{ env.CDK_DEFAULT_ACCOUNT }}/${{ env.CDK_DEFAULT_REGION }}
       continue-on-error: true
 
     - name: Deploy Backend Stack
@@ -53,11 +56,6 @@ jobs:
         npx cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
         echo "alb-url=$ALB_URL" >> $GITHUB_OUTPUT
-      env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
-        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
-        APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: ${{ vars.NODE_ENV }}
 
   deploy-frontend:
     needs: deploy-backend
@@ -73,7 +71,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: infra/package-lock.json
 
@@ -82,7 +80,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ vars.CDK_DEFAULT_REGION }}
+        aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
     - name: Install dependencies
       working-directory: ./infra
@@ -97,16 +95,11 @@ jobs:
         CLOUDFRONT_ID=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}FrontendStack --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' --output text)
         echo "frontend-url=$FRONTEND_URL" >> $GITHUB_OUTPUT
         echo "cloudfront-id=$CLOUDFRONT_ID" >> $GITHUB_OUTPUT
-      env:
-        CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
-        CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
-        APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: ${{ vars.NODE_ENV }}
 
     - name: Setup Node.js for frontend build
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
@@ -119,22 +112,15 @@ jobs:
       run: |
         export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.alb-url }}"
         npm run build
-      env:
-        NODE_ENV: ${{ vars.NODE_ENV }}
 
     - name: Deploy frontend to S3
       working-directory: ./frontend
       run: |
         BUCKET_NAME=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}FrontendStack --query 'Stacks[0].Outputs[?OutputKey==`FrontendBucketName`].OutputValue' --output text)
         aws s3 sync out/ s3://$BUCKET_NAME --delete
-      env:
-        APP_NAME: ${{ vars.APP_NAME }}
 
     - name: Invalidate CloudFront cache
-      run: |
-        aws cloudfront create-invalidation --distribution-id ${{ steps.deploy-frontend.outputs.cloudfront-id }} --paths "/*"
-      env:
-        APP_NAME: ${{ vars.APP_NAME }}
+      run: aws cloudfront create-invalidation --distribution-id ${{ steps.deploy-frontend.outputs.cloudfront-id }} --paths "/*"
 
   update-api-cors:
     needs: [deploy-backend, deploy-frontend]
@@ -149,23 +135,50 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ vars.CDK_DEFAULT_REGION }}
+        aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
     - name: Update API CORS configuration
       run: |
-        # Set variables
-        CLUSTER_NAME="${APP_NAME}EcsCluster"
-        echo "Looking for ECS cluster: $CLUSTER_NAME"
+        # Find the correct ECS cluster dynamically
+        echo "Looking for ECS clusters..."
+        CLUSTER_ARNS=$(aws ecs list-clusters --query 'clusterArns' --output text)
         
-        # Check if cluster exists
-        if ! aws ecs describe-clusters --clusters "$CLUSTER_NAME" --query 'clusters[0].status' --output text 2>/dev/null | grep -q "ACTIVE"; then
-          echo "ERROR: ECS cluster '$CLUSTER_NAME' not found or not active"
+        if [ -z "$CLUSTER_ARNS" ]; then
+          echo "ERROR: No ECS clusters found"
+          exit 1
+        fi
+        
+        echo "Found clusters:"
+        echo "$CLUSTER_ARNS"
+        
+        # Find the cluster that contains our app name (should be the backend cluster)
+        CLUSTER_NAME=""
+        for cluster_arn in $CLUSTER_ARNS; do
+          cluster_name=$(echo "$cluster_arn" | cut -d'/' -f3)
+          if [[ "$cluster_name" == *"${APP_NAME}"* ]] && [[ "$cluster_name" == *"Backend"* ]]; then
+            CLUSTER_NAME="$cluster_name"
+            break
+          fi
+        done
+        
+        if [ -z "$CLUSTER_NAME" ]; then
+          echo "ERROR: Could not find backend cluster containing '${APP_NAME}'"
           echo "Available clusters:"
           aws ecs list-clusters --output table
           exit 1
         fi
         
-        echo "ECS cluster '$CLUSTER_NAME' found and active"
+        echo "Using ECS cluster: $CLUSTER_NAME"
+        
+        # Check if cluster is active
+        CLUSTER_STATUS=$(aws ecs describe-clusters --clusters "$CLUSTER_NAME" --query 'clusters[0].status' --output text)
+        
+        if [ "$CLUSTER_STATUS" != "ACTIVE" ]; then
+          echo "ERROR: ECS cluster '$CLUSTER_NAME' is not active (status: $CLUSTER_STATUS)"
+          exit 1
+        fi
+        
+        echo "ECS cluster '$CLUSTER_NAME' is active"
         
         # Get the ECS service name with error handling
         SERVICE_ARNS=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns' --output text)
@@ -249,9 +262,6 @@ jobs:
             exit 1
           fi
         fi
-      env:
-        APP_NAME: ${{ vars.APP_NAME }}
-        NODE_ENV: ${{ vars.NODE_ENV }}
 
     - name: Output deployment info
       run: |
