@@ -22,8 +22,17 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3001', // Local development
+];
+
+// Add production origin if available
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -48,7 +57,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true, // Always secure in production
+    secure: process.env.NODE_ENV === 'production', // Only secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
@@ -100,7 +109,7 @@ async function startServer() {
       const redisClient = createClient({
         url: process.env.REDIS_URL,
         socket: {
-          tls: true, // Always use TLS in production
+          tls: process.env.NODE_ENV === 'production', // Only use TLS in production
           rejectUnauthorized: false
         }
       });
@@ -122,7 +131,7 @@ async function startServer() {
         resave: false,
         saveUninitialized: false,
         cookie: {
-          secure: true, // Always secure in production
+          secure: process.env.NODE_ENV === 'production', // Only secure in production
           httpOnly: true,
           maxAge: 24 * 60 * 60 * 1000 // 24 hours
         }
@@ -135,7 +144,7 @@ async function startServer() {
     // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log('Environment: production');
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

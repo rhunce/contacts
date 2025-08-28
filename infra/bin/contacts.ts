@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { ContactsStack } from '../lib/contacts-stack';
+import { BackendStack } from '../lib/backend-stack';
+import { FrontendStack } from '../lib/frontend-stack';
 
 const app = new cdk.App();
 
@@ -18,12 +19,25 @@ if (!account || !region || !appName) {
   throw new Error(`Required environment variables are not set: ${missingVars.join(', ')}`);
 }
 
-new ContactsStack(app, `${appName}Stack`, {
+// Create backend stack
+const backendStack = new BackendStack(app, `${appName}BackendStack`, {
   env: {
     account,
     region
   },
   appName
 });
+
+// Create frontend stack
+const frontendStack = new FrontendStack(app, `${appName}FrontendStack`, {
+  env: {
+    account,
+    region
+  },
+  appName
+});
+
+// Add dependency: frontend depends on backend
+frontendStack.addDependency(backendStack);
 
 // app.synth();

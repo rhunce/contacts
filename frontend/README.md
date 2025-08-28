@@ -35,7 +35,7 @@ A Next.js frontend application for managing contacts with authentication and rea
 ### Prerequisites
 
 - Node.js 18+
-- Running backend API (see `../api/README.md`)
+- Running backend API (see `../backend/README.md`)
 
 ### Installation
 

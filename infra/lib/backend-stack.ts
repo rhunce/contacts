@@ -7,16 +7,19 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as path from "path";
 
-interface ContactsStackProps extends cdk.StackProps {
+interface BackendStackProps extends cdk.StackProps {
   appName: string;
 }
 
-export class ContactsStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props: ContactsStackProps) {
+export class BackendStack extends cdk.Stack {
+  public readonly vpc: ec2.Vpc;
+  public readonly loadBalancerDnsName: string;
+
+  constructor(scope: cdk.App, id: string, props: BackendStackProps) {
     super(scope, id, props);
 
     // VPC
-    const vpc = new ec2.Vpc(this, `${props.appName}Vpc`, { maxAzs: 2 });
+    this.vpc = new ec2.Vpc(this, `${props.appName}Vpc`, { maxAzs: 2 });
 
     // Aurora PostgreSQL Database
     const dbSecret = new secretsmanager.Secret(this, `${props.appName}DbSecret`, {
@@ -27,7 +30,7 @@ export class ContactsStack extends cdk.Stack {
       },
     });
 
-    const dbSecurityGroup = new ec2.SecurityGroup(this, `${props.appName}DbSecurityGroup`, { vpc });
+    const dbSecurityGroup = new ec2.SecurityGroup(this, `${props.appName}DbSecurityGroup`, { vpc: this.vpc });
 
     const dbCluster = new rds.DatabaseCluster(this, `${props.appName}Aurora`, {
       engine: rds.DatabaseClusterEngine.auroraPostgres({
@@ -35,7 +38,7 @@ export class ContactsStack extends cdk.Stack {
       }),
       credentials: rds.Credentials.fromSecret(dbSecret),
       defaultDatabaseName: `${props.appName}Db`,
-      vpc,
+      vpc: this.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       securityGroups: [dbSecurityGroup],
       writer: rds.ClusterInstance.serverlessV2("writer"),
@@ -47,13 +50,13 @@ export class ContactsStack extends cdk.Stack {
 
     const sessionSecret = new secretsmanager.Secret(this, `${props.appName}SessionSecret`);
 
-    // Redis ElastiCache Replication Group (supports encryption)
+    // Redis ElastiCache Replication Group
     const redisSubnetGroup = new elasticache.CfnSubnetGroup(this, `${props.appName}RedisSubnetGroup`, {
       description: 'Subnet group for Redis cluster',
-      subnetIds: vpc.privateSubnets.map(subnet => subnet.subnetId),
+      subnetIds: this.vpc.privateSubnets.map(subnet => subnet.subnetId),
     });
 
-    const redisSecurityGroup = new ec2.SecurityGroup(this, `${props.appName}RedisSecurityGroup`, { vpc });
+    const redisSecurityGroup = new ec2.SecurityGroup(this, `${props.appName}RedisSecurityGroup`, { vpc: this.vpc });
 
     const redisReplicationGroup = new elasticache.CfnReplicationGroup(this, `${props.appName}Redis`, {
       replicationGroupDescription: 'Redis cluster for session storage',
@@ -71,15 +74,14 @@ export class ContactsStack extends cdk.Stack {
 
     // ECS Fargate Service with Load Balancer
     const fargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${props.appName}FargateService`, {
-      cluster: new ecs.Cluster(this, `${props.appName}EcsCluster`, { vpc }),
+      cluster: new ecs.Cluster(this, `${props.appName}EcsCluster`, { vpc: this.vpc }),
       publicLoadBalancer: true,
       taskImageOptions: {
-        image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../api')),
+        image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../backend')),
         containerPort: 3000,
         environment: {
           PORT: "3000",
         },
-        // Sensitive values: inject as secrets
         secrets: {
           PGHOST: ecs.Secret.fromSecretsManager(dbCluster.secret!, "host"),
           PGPORT: ecs.Secret.fromSecretsManager(dbCluster.secret!, "port"),
@@ -107,22 +109,27 @@ export class ContactsStack extends cdk.Stack {
     // Allow ECS tasks to connect to the database
     dbCluster.connections.allowDefaultPortFrom(fargateService.service, 'ECS tasks to Aurora');
     
-    // Allow ECS tasks to connect to Redis (TLS port)
+    // Allow ECS tasks to connect to Redis
     redisSecurityGroup.addIngressRule(
       fargateService.service.connections.securityGroups[0],
       ec2.Port.tcp(6379),
       'ECS tasks to Redis TLS'
     );
     
-    // Secrets must be readable by BOTH the task role AND the *execution* role:
+    // Grant permissions to read secrets
     dbCluster.secret!.grantRead(fargateService.taskDefinition.taskRole);
     dbCluster.secret!.grantRead(fargateService.taskDefinition.executionRole!);
     sessionSecret.grantRead(fargateService.taskDefinition.taskRole);
     sessionSecret.grantRead(fargateService.taskDefinition.executionRole!);
 
+    // Store load balancer DNS name for frontend stack
+    this.loadBalancerDnsName = fargateService.loadBalancer.loadBalancerDnsName;
+
+    // Outputs
     new cdk.CfnOutput(this, "AlbUrl", {
       value: `http://${fargateService.loadBalancer.loadBalancerDnsName}`,
-      description: "Load Balancer URL for the Contacts API"
+      description: "Load Balancer URL for the Contacts API",
+      exportName: `${props.appName}-alb-url`
     });
 
     new cdk.CfnOutput(this, "DatabaseEndpoint", {
@@ -135,5 +142,10 @@ export class ContactsStack extends cdk.Stack {
       description: "Redis ElastiCache Endpoint"
     });
 
+    new cdk.CfnOutput(this, "VpcId", {
+      value: this.vpc.vpcId,
+      description: "VPC ID for the backend infrastructure",
+      exportName: `${props.appName}-vpc-id`
+    });
   }
 }
