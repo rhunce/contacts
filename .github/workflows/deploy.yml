@@ -260,7 +260,7 @@ jobs:
             requiresCompatibilities: .requiresCompatibilities,
             cpu: .cpu,
             memory: .memory
-          } + (if .tags then {tags: .tags} else {} end)')
+          }')
           
           # Register new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$CLEAN_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
