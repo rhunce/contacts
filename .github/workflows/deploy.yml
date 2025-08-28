@@ -42,7 +42,7 @@ jobs:
 
     - name: Install dependencies
       working-directory: ./infra
-      run: npm ci
+      run: npm ci --include=dev
 
     - name: CDK Bootstrap
       working-directory: ./infra
@@ -84,7 +84,7 @@ jobs:
 
     - name: Install dependencies
       working-directory: ./infra
-      run: npm ci
+      run: npm ci --include=dev
 
     - name: Deploy Frontend Infrastructure
       id: deploy-frontend
