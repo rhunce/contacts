@@ -2,26 +2,34 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecsPatterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as path from "path";
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 interface BackendStackProps extends cdk.StackProps {
   appName: string;
+  rootDomain: string;
 }
 
 export class BackendStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly loadBalancerDnsName: string;
+  public readonly apiDomainName: string;
 
   constructor(scope: cdk.App, id: string, props: BackendStackProps) {
     super(scope, id, props);
 
+    // -----------------------------
     // VPC
+    // -----------------------------
     this.vpc = new ec2.Vpc(this, `${props.appName}Vpc`, { maxAzs: 2 });
 
+    // -----------------------------
     // Aurora PostgreSQL Database
+    // -----------------------------
     const dbSecret = new secretsmanager.Secret(this, `${props.appName}DbSecret`, {
       generateSecretString: {
         secretStringTemplate: JSON.stringify({ username: 'postgres' }),
@@ -50,7 +58,9 @@ export class BackendStack extends cdk.Stack {
 
     const sessionSecret = new secretsmanager.Secret(this, `${props.appName}SessionSecret`);
 
+    // -----------------------------
     // Redis ElastiCache Replication Group
+    // -----------------------------
     const redisSubnetGroup = new elasticache.CfnSubnetGroup(this, `${props.appName}RedisSubnetGroup`, {
       description: 'Subnet group for Redis cluster',
       subnetIds: this.vpc.privateSubnets.map(subnet => subnet.subnetId),
@@ -72,60 +82,104 @@ export class BackendStack extends cdk.Stack {
       atRestEncryptionEnabled: true,
     });
 
-    // ECS Fargate Service with Load Balancer
-    const fargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(this, `${props.appName}FargateService`, {
-      cluster: new ecs.Cluster(this, `${props.appName}EcsCluster`, { vpc: this.vpc }),
-      publicLoadBalancer: true,
-      taskImageOptions: {
-        image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../backend')),
-        containerPort: 3000,
-        environment: {
-          PORT: "3000",
-        },
-        secrets: {
-          PGHOST: ecs.Secret.fromSecretsManager(dbCluster.secret!, "host"),
-          PGPORT: ecs.Secret.fromSecretsManager(dbCluster.secret!, "port"),
-          PGUSER: ecs.Secret.fromSecretsManager(dbCluster.secret!, "username"),
-          PGPASSWORD: ecs.Secret.fromSecretsManager(dbCluster.secret!, "password"),
-          PGDATABASE: ecs.Secret.fromSecretsManager(dbCluster.secret!, "dbname"),
-          SESSION_SECRET: ecs.Secret.fromSecretsManager(sessionSecret),
-          REDIS_URL: ecs.Secret.fromSecretsManager(
-            new secretsmanager.Secret(this, `${props.appName}RedisUrl`, {
-              secretStringValue: cdk.SecretValue.unsafePlainText(
-                `rediss://${redisReplicationGroup.attrPrimaryEndPointAddress}:6379`
-              ),
-            })
-          )
-        },
-      },
+    // -----------------------------
+    // Route 53 hosted zone + ACM
+    // -----------------------------
+    const zone = route53.HostedZone.fromLookup(this, `${props.appName}HostedZone`, {
+      domainName: props.rootDomain,
+    });
+    // TODO: maybe pass in api subdomain as a prop later on
+    const apiDomainName = `api.${props.rootDomain}`;
+    this.apiDomainName = apiDomainName;
+
+    const cert = new acm.Certificate(this, `${props.appName}ApiCert`, {
+      domainName: apiDomainName,
+      validation: acm.CertificateValidation.fromDns(zone), // auto DNS validation in Route 53
     });
 
-    // Configure health check for the API
+    // -----------------------------
+    // ECS + ALB with HTTPS
+    // -----------------------------
+    const fargateService = new ecsPatterns.ApplicationLoadBalancedFargateService(
+      this,
+      `${props.appName}FargateService`,
+      {
+        cluster: new ecs.Cluster(this, `${props.appName}EcsCluster`, { vpc: this.vpc }),
+        publicLoadBalancer: true,
+
+        // HTTPS + domain
+        certificate: cert,
+        domainName: apiDomainName,
+        domainZone: zone,
+        redirectHTTP: true, // 80 -> 443
+
+        taskImageOptions: {
+          image: ecs.ContainerImage.fromAsset(path.join(__dirname, '../../backend')),
+          containerPort: 3000,
+          environment: { PORT: "3000", NODE_ENV: "production" },
+          secrets: {
+            PGHOST: ecs.Secret.fromSecretsManager(dbCluster.secret!, "host"),
+            PGPORT: ecs.Secret.fromSecretsManager(dbCluster.secret!, "port"),
+            PGUSER: ecs.Secret.fromSecretsManager(dbCluster.secret!, "username"),
+            PGPASSWORD: ecs.Secret.fromSecretsManager(dbCluster.secret!, "password"),
+            PGDATABASE: ecs.Secret.fromSecretsManager(dbCluster.secret!, "dbname"),
+            SESSION_SECRET: ecs.Secret.fromSecretsManager(sessionSecret),
+            REDIS_URL: ecs.Secret.fromSecretsManager(
+              new secretsmanager.Secret(this, `${props.appName}RedisUrl`, {
+                secretStringValue: cdk.SecretValue.unsafePlainText(
+                  `rediss://${redisReplicationGroup.attrPrimaryEndPointAddress}:6379`
+                ),
+              })
+            )
+          },
+        },
+      }
+    );
+
+    // -----------------------------
+    // Health Check
+    // -----------------------------
     fargateService.targetGroup.configureHealthCheck({ 
       path: "/health",
       healthyHttpCodes: "200"
     });
 
+    // -----------------------------
     // Allow ECS tasks to connect to the database
+    // -----------------------------
     dbCluster.connections.allowDefaultPortFrom(fargateService.service, 'ECS tasks to Aurora');
     
+    // -----------------------------
     // Allow ECS tasks to connect to Redis
+    // -----------------------------
     redisSecurityGroup.addIngressRule(
       fargateService.service.connections.securityGroups[0],
       ec2.Port.tcp(6379),
       'ECS tasks to Redis TLS'
     );
     
+    // -----------------------------
     // Grant permissions to read secrets
+    // -----------------------------
     dbCluster.secret!.grantRead(fargateService.taskDefinition.taskRole);
     dbCluster.secret!.grantRead(fargateService.taskDefinition.executionRole!);
     sessionSecret.grantRead(fargateService.taskDefinition.taskRole);
     sessionSecret.grantRead(fargateService.taskDefinition.executionRole!);
 
+    // -----------------------------
     // Store load balancer DNS name for frontend stack
+    // -----------------------------
     this.loadBalancerDnsName = fargateService.loadBalancer.loadBalancerDnsName;
 
+    // -----------------------------
     // Outputs
+    // -----------------------------
+    new cdk.CfnOutput(this, "ApiUrl", {
+      value: `https://${apiDomainName}`,
+      description: "Public HTTPS API endpoint",
+      exportName: `${props.appName}-api-url`
+    });
+
     new cdk.CfnOutput(this, "AlbUrl", {
       value: `http://${fargateService.loadBalancer.loadBalancerDnsName}`,
       description: "Load Balancer URL for the Contacts API",

@@ -15,12 +15,14 @@ env:
   CDK_DEFAULT_REGION: ${{ vars.CDK_DEFAULT_REGION }}
   APP_NAME: ${{ vars.APP_NAME }}
   NODE_ENV: ${{ vars.NODE_ENV }}
+  ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
 
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
     outputs:
       alb-url: ${{ steps.deploy.outputs.alb-url }}
+      api-url: ${{ steps.deploy.outputs.api-url }}
     
     steps:
     - name: Checkout code
@@ -55,7 +57,9 @@ jobs:
       run: |
         npx cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
+        API_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' --output text)
         echo "alb-url=$ALB_URL" >> $GITHUB_OUTPUT
+        echo "api-url=$API_URL" >> $GITHUB_OUTPUT
 
   deploy-frontend:
     needs: deploy-backend
@@ -110,7 +114,7 @@ jobs:
     - name: Build frontend
       working-directory: ./frontend
       run: |
-        export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.alb-url }}"
+        export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.api-url }}"
         npm run build
 
     - name: Deploy frontend to S3
@@ -125,169 +129,86 @@ jobs:
   update-api-cors:
     needs: [deploy-backend, deploy-frontend]
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.CDK_DEFAULT_REGION }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
-    - name: Update API CORS configuration
-      run: |
-        # Find the correct ECS cluster dynamically
-        echo "Looking for ECS clusters..."
-        CLUSTER_ARNS=$(aws ecs list-clusters --query 'clusterArns' --output text)
-        
-        if [ -z "$CLUSTER_ARNS" ]; then
-          echo "ERROR: No ECS clusters found"
-          exit 1
-        fi
-        
-        echo "Found clusters:"
-        echo "$CLUSTER_ARNS"
-        echo ""
-        echo "APP_NAME: ${APP_NAME}"
-        echo ""
-        
-        # Find the cluster that contains our app name (should be the backend cluster)
-        CLUSTER_NAME=""
-        for cluster_arn in $CLUSTER_ARNS; do
-          cluster_name=$(echo "$cluster_arn" | rev | cut -d'/' -f1 | rev)
-          echo "Checking cluster: $cluster_name"
-          echo "  - Contains ${APP_NAME}: $([[ "$cluster_name" == *"${APP_NAME}"* ]] && echo "YES" || echo "NO")"
-          echo "  - Contains Backend: $([[ "$cluster_name" == *"Backend"* ]] && echo "YES" || echo "NO")"
-          
-          if [[ "$cluster_name" == *"${APP_NAME}"* ]] && [[ "$cluster_name" == *"Backend"* ]]; then
-            CLUSTER_NAME="$cluster_name"
-            echo "  -> MATCH FOUND!"
-            break
-          fi
-        done
-        
-        echo ""
-        if [ -z "$CLUSTER_NAME" ]; then
-          echo "ERROR: Could not find backend cluster containing '${APP_NAME}'"
-          echo "Available clusters:"
-          aws ecs list-clusters --output table
-          exit 1
-        fi
-        
-        echo "Using ECS cluster: $CLUSTER_NAME"
-        
-        # Check if cluster is active
-        CLUSTER_STATUS=$(aws ecs describe-clusters --clusters "$CLUSTER_NAME" --query 'clusters[0].status' --output text)
-        
-        if [ "$CLUSTER_STATUS" != "ACTIVE" ]; then
-          echo "ERROR: ECS cluster '$CLUSTER_NAME' is not active (status: $CLUSTER_STATUS)"
-          exit 1
-        fi
-        
-        echo "ECS cluster '$CLUSTER_NAME' is active"
-        
-        # Get the ECS service name with error handling
-        SERVICE_ARNS=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns' --output text)
-        
-        if [ -z "$SERVICE_ARNS" ]; then
-          echo "ERROR: No services found in cluster '$CLUSTER_NAME'"
-          echo "This might indicate the backend deployment failed"
-          exit 1
-        fi
-        
-        SERVICE_NAME=$(echo "$SERVICE_ARNS" | cut -d'/' -f3)
-        echo "Found ECS service: $SERVICE_NAME"
-        
-        # Verify service exists and is stable
-        SERVICE_STATUS=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query 'services[0].status' --output text)
-        
-        if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
-          echo "WARNING: ECS service '$SERVICE_NAME' is not active (status: $SERVICE_STATUS)"
-          echo "Waiting for service to become stable..."
-          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" || {
-            echo "ERROR: Service did not become stable within timeout"
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Update API CORS configuration
+        env:
+          APP_NAME: ${{ env.APP_NAME }}
+          FRONTEND_URL: ${{ needs.deploy-frontend.outputs.frontend-url }}
+        run: |
+          set -euo pipefail
+
+          STACK_NAME="${APP_NAME}BackendStack"
+
+          # Get ECS cluster and service from CFN resources
+          CLUSTER_NAME=$(aws cloudformation list-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --query 'StackResourceSummaries[?ResourceType==`AWS::ECS::Cluster`].PhysicalResourceId' \
+            --output text)
+
+          SERVICE_NAME=$(aws cloudformation list-stack-resources \
+            --stack-name "$STACK_NAME" \
+            --query 'StackResourceSummaries[?ResourceType==`AWS::ECS::Service`].PhysicalResourceId' \
+            --output text)
+
+          if [ -z "$CLUSTER_NAME" ] || [ -z "$SERVICE_NAME" ]; then
+            echo "ERROR: Could not find ECS Cluster or Service in stack $STACK_NAME"
             exit 1
-          }
-        fi
-        
-        echo "ECS service '$SERVICE_NAME' is active and stable"
-        
-        # Get current task definition
-        TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query 'services[0].taskDefinition' --output text)
-        
-        if [ -z "$TASK_DEF_ARN" ] || [ "$TASK_DEF_ARN" = "None" ]; then
-          echo "ERROR: Could not get task definition ARN for service '$SERVICE_NAME'"
-          exit 1
-        fi
-        
-        echo "Current task definition: $TASK_DEF_ARN"
-        
-        # Get task definition details
-        TASK_DEF=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' --output json)
-        
-        if [ -z "$TASK_DEF" ]; then
-          echo "ERROR: Could not get task definition details"
-          exit 1
-        fi
-        
-        # Check if CORS_ORIGIN already exists
-        EXISTING_CORS=$(echo "$TASK_DEF" | jq -r '.containerDefinitions[0].environment[] | select(.name=="CORS_ORIGIN") | .value // empty')
-        
-        if [ "$EXISTING_CORS" = "${{ needs.deploy-frontend.outputs.frontend-url }}" ]; then
-          echo "CORS_ORIGIN already set correctly to: ${{ needs.deploy-frontend.outputs.frontend-url }}"
-          echo "No update needed"
-        else
-          echo "Updating CORS_ORIGIN to: ${{ needs.deploy-frontend.outputs.frontend-url }}"
-          
-          # Remove existing CORS_ORIGIN if it exists
-          TASK_DEF_NO_CORS=$(echo "$TASK_DEF" | jq 'del(.containerDefinitions[0].environment[] | select(.name=="CORS_ORIGIN"))')
-          
-          # Add new CORS_ORIGIN
-          UPDATED_TASK_DEF=$(echo "$TASK_DEF_NO_CORS" | jq '.containerDefinitions[0].environment += [{"name": "CORS_ORIGIN", "value": "'${{ needs.deploy-frontend.outputs.frontend-url }}'"}]')
-          
-          # Clean the task definition to only include fields accepted by register-task-definition
+          fi
+
+          echo "Cluster: $CLUSTER_NAME"
+          echo "Service: $SERVICE_NAME"
+          echo "Frontend URL (CORS_ORIGIN): $FRONTEND_URL"
+
+          # Fetch current task definition
+          TASK_DEF_ARN=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" --query 'services[0].taskDefinition' --output text)
+          TASK_DEF_JSON=$(aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query 'taskDefinition' --output json)
+
+          # Existing CORS_ORIGIN?
+          EXISTING_CORS=$(echo "$TASK_DEF_JSON" | jq -r '.containerDefinitions[0].environment[]? | select(.name=="CORS_ORIGIN") | .value // empty')
+
+          if [ "$EXISTING_CORS" = "$FRONTEND_URL" ]; then
+            echo "CORS_ORIGIN already set to $FRONTEND_URL"
+            exit 0
+          fi
+
+          echo "Updating CORS_ORIGIN -> $FRONTEND_URL"
+
+          # Remove existing CORS_ORIGIN entry if present
+          TASK_DEF_NO_CORS=$(echo "$TASK_DEF_JSON" | jq '(.containerDefinitions[0].environment) |= (map(select(.name!="CORS_ORIGIN")))')
+
+          # Add/append new CORS_ORIGIN
+          UPDATED_TASK_DEF=$(echo "$TASK_DEF_NO_CORS" | jq --arg ORIGIN "$FRONTEND_URL" '.containerDefinitions[0].environment += [{"name":"CORS_ORIGIN","value":$ORIGIN}]')
+
+          # Keep only accepted fields
           CLEAN_TASK_DEF=$(echo "$UPDATED_TASK_DEF" | jq '{
-            family: .family,
-            taskRoleArn: .taskRoleArn,
-            executionRoleArn: .executionRoleArn,
-            networkMode: .networkMode,
-            containerDefinitions: .containerDefinitions,
-            volumes: .volumes,
-            placementConstraints: .placementConstraints,
-            requiresCompatibilities: .requiresCompatibilities,
-            cpu: .cpu,
-            memory: .memory
+            family, taskRoleArn, executionRoleArn, networkMode, containerDefinitions,
+            volumes, placementConstraints, requiresCompatibilities, cpu, memory
           }')
-          
-          # Register new task definition
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$CLEAN_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
-          
-          if [ -z "$NEW_TASK_DEF_ARN" ]; then
-            echo "ERROR: Failed to register new task definition"
-            exit 1
-          fi
-          
-          echo "New task definition registered: $NEW_TASK_DEF_ARN"
-          
-          # Update service to use new task definition
-          aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --task-definition "$NEW_TASK_DEF_ARN"
-          
-          if [ $? -eq 0 ]; then
-            echo "Service updated successfully"
-            echo "Waiting for service to stabilize..."
-            aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
-            echo "Service is now stable"
-          else
-            echo "ERROR: Failed to update service"
-            exit 1
-          fi
-        fi
 
-    - name: Output deployment info
-      run: |
-        echo "Full stack deployment completed successfully!"
-        echo "Frontend URL: ${{ needs.deploy-frontend.outputs.frontend-url }}"
-        echo "Backend URL: ${{ needs.deploy-backend.outputs.alb-url }}"
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$CLEAN_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --task-definition "$NEW_TASK_DEF_ARN"
+
+          echo "Waiting for service to stabilize..."
+          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
+
+      - name: Output deployment info
+        run: |
+          echo "Full stack deployment completed successfully!"
+          echo "Frontend URL: ${{ needs.deploy-frontend.outputs.frontend-url }}"
+          echo "Backend ALB URL (HTTP redirected): ${{ needs.deploy-backend.outputs.alb-url }}"
+          echo "Backend API URL (HTTPS): ${{ needs.deploy-backend.outputs.api-url }}"

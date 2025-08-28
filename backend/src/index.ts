@@ -7,144 +7,157 @@ import RedisStore from 'connect-redis';
 import { createClient } from 'redis';
 import { prisma } from './lib/prisma';
 import { initializeDatabase } from './init-db';
-import { CustomSession } from './types';
 import { responseInterceptor } from './middleware/responseInterceptor';
 
-// Import routes
+// Routes
 import authRoutes from './routes/auth';
 import contactRoutes from './routes/contacts';
 import contactHistoryRoutes from './routes/contactHistory';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Security middleware
+// 1) Security headers
 app.use(helmet());
 
-// CORS configuration
-const allowedOrigins = [
-  'http://localhost:3001', // Local development
-];
+// 2) Trust the ALB / proxy so `req.secure` is accurate and `secure` cookies are set
+app.set('trust proxy', 1);
 
-// Add production origin if available
+// 3) CORS (allow localhost for dev + a single production origin via env)
+const allowedOrigins = new Set<string>([
+  'http://localhost:3001',
+]);
 if (process.env.CORS_ORIGIN) {
-  allowedOrigins.push(process.env.CORS_ORIGIN);
+  allowedOrigins.add(process.env.CORS_ORIGIN);
 }
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+// If you want stricter control, use a function. Array also works, but function lets us log mismatches.
+const corsMiddleware = cors({
+  origin: (origin, callback) => {
+    // allow non-browser tools (curl/postman) with no origin
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin not allowed -> ${origin}`));
+  },
+  credentials: true,
 });
-app.use(limiter);
+app.use(corsMiddleware);
+// Preflight
+app.options('*', corsMiddleware);
 
-// Body parsing middleware
+// 4) Rate limiting
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Too many requests from this IP, please try again later.',
+    skip: (req) => req.method === 'OPTIONS'
+  })
+);
+
+// 5) Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Response interceptor middleware (add this before routes)
+// 6) Response interceptor (before routes)
 app.use(responseInterceptor);
 
-// Session configuration (will be updated with Redis store in startServer)
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // Only secure in production
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// Health check endpoint
+// 7) Health check (works even before DB initialization)
 app.get('/health', (req, res) => {
   res.success({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// API routes
-app.use('/', authRoutes);
-app.use('/contact', contactRoutes);
-app.use('/contacts', contactRoutes);
-app.use('/contact-history', contactHistoryRoutes);
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.notFound('Route not found');
-});
-
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.error('Internal server error');
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-// Initialize database and start server
+// 8) Start the server with proper session configuration, then mount routes
 async function startServer() {
   try {
-    // Initialize database (run migrations and seed if needed)
+    // Ensure DB is migrated/seeded as your helper dictates
     await initializeDatabase();
-    
-    // Initialize Redis for sessions (only if REDIS_URL is provided)
+
+    // --- Build session options once ---
+    const baseSessionOptions: session.SessionOptions = {
+      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        // Cross-site cookies need SameSite=None and Secure in production
+        secure: NODE_ENV === 'production',
+        sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24h
+      },
+    };
+
+    // --- Prefer Redis store in all environments if REDIS_URL provided ---
     if (process.env.REDIS_URL) {
       const redisClient = createClient({
         url: process.env.REDIS_URL,
         socket: {
-          tls: process.env.NODE_ENV === 'production', // Only use TLS in production
-          rejectUnauthorized: false
-        }
+          // Use TLS in prod since your ElastiCache has transit encryption enabled
+          tls: NODE_ENV === 'production',
+          rejectUnauthorized: false,
+        },
       });
 
-      // Connect to Redis
       await redisClient.connect();
       console.log('Connected to Redis for session storage');
 
-      // Update session configuration with Redis store
       const redisStore = new RedisStore({
         client: redisClient,
         prefix: 'sess:',
       });
 
-      // Update the session middleware with Redis store
-      app.use(session({
-        store: redisStore,
-        secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-        resave: false,
-        saveUninitialized: false,
-        cookie: {
-          secure: process.env.NODE_ENV === 'production', // Only secure in production
-          httpOnly: true,
-          maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        }
-      }));
+      app.use(
+        session({
+          ...baseSessionOptions,
+          store: redisStore,
+        })
+      );
     } else {
-      console.log('Redis not configured, using in-memory session store');
-      // Session middleware is already configured above with default in-memory store
+      console.log('REDIS_URL not set — using in-memory session store');
+      app.use(session(baseSessionOptions));
     }
-    
-    // Start server
+
+    // 9) Mount API routes AFTER session middleware so req.session is available
+    app.use('/', authRoutes);
+    app.use('/contact', contactRoutes);
+    app.use('/contacts', contactRoutes);
+    app.use('/contact-history', contactHistoryRoutes);
+
+    // 10) 404 handler
+    app.use('*', (req, res) => {
+      res.notFound('Route not found');
+    });
+
+    // 11) Error handler
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+      console.error('Unhandled error:', err);
+      res.error('Internal server error');
+    });
+
+    // 12) Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`Environment: ${NODE_ENV}`);
+      if (process.env.CORS_ORIGIN) {
+        console.log(`CORS_ORIGIN: ${process.env.CORS_ORIGIN}`);
+      } else {
+        console.log('CORS_ORIGIN is not set; only localhost will be allowed for browser origins.');
+      }
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, shutting down gracefully');
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+
+    process.on('SIGINT', async () => {
+      console.log('SIGINT received, shutting down gracefully');
+      await prisma.$disconnect();
+      process.exit(0);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

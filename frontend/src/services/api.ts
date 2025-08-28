@@ -1,8 +1,11 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 
 // For production, use the API URL as provided
-// We'll handle mixed content issues by allowing insecure requests in development
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === 'production'
+    ? '' // force providing env in build; empty means misconfig will fail loudly
+    : 'http://localhost:3000');
 
 // Log the API URL for debugging
 if (typeof window !== 'undefined') {

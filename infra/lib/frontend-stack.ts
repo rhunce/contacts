@@ -15,7 +15,9 @@ export class FrontendStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: FrontendStackProps) {
     super(scope, id, props);
 
+    // -----------------------------
     // S3 Bucket for frontend files
+    // -----------------------------
     this.bucket = new s3.Bucket(this, `${props.appName}FrontendBucket`, {
       bucketName: `${props.appName.toLowerCase()}-frontend-${this.account}`,
       publicReadAccess: false,
@@ -24,21 +26,27 @@ export class FrontendStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    // -----------------------------
     // CloudFront Origin Access Identity
+    // -----------------------------
     const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, `${props.appName}OriginAccessIdentity`, {
       comment: `OAI for ${props.appName} frontend`,
     });
 
+    // -----------------------------
     // Grant read access to CloudFront
+    // -----------------------------
     this.bucket.grantRead(originAccessIdentity);
 
+    // -----------------------------
     // CloudFront Distribution
+    // -----------------------------
     this.distribution = new cloudfront.Distribution(this, `${props.appName}FrontendDistribution`, {
       defaultBehavior: {
         origin: new origins.S3Origin(this.bucket, {
           originAccessIdentity,
         }),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.ALLOW_ALL,
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
         originRequestPolicy: cloudfront.OriginRequestPolicy.CORS_S3_ORIGIN,
       },
@@ -57,9 +65,11 @@ export class FrontendStack extends cdk.Stack {
       ],
     });
 
+    // -----------------------------
     // Outputs
+    // -----------------------------
     new cdk.CfnOutput(this, "FrontendUrl", {
-      value: `http://${this.distribution.distributionDomainName}`,
+      value: `https://${this.distribution.distributionDomainName}`,
       description: "CloudFront URL for the Frontend",
       exportName: `${props.appName}-frontend-url`
     });
