@@ -20,6 +20,7 @@ import DeleteContactModal from '@/components/Contacts/DeleteContactModal';
 import EditContactModal from '@/components/Contacts/EditContactModal';
 import { Contact } from '@/types/contact';
 import toast from 'react-hot-toast';
+import { getMaxContactsPerUser } from '@/utils/limits';
 
 const DashboardPage: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -88,20 +89,39 @@ const DashboardPage: React.FC = () => {
   return (
     <AuthGuard requireAuth={true}>
       <Layout>
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-            My Contacts
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setShowAddModal(true)}
-            sx={{ px: 3 }}
-          >
-            Add Contact
-          </Button>
-        </Box>
+              <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+                My Contacts
+              </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {contacts?.length || 0} of {getMaxContactsPerUser()} contacts
+            </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setShowAddModal(true)}
+              disabled={isCreating || (contacts?.length || 0) >= getMaxContactsPerUser()}
+              sx={{ px: 3 }}
+            >
+              Add Contact
+            </Button>
+          </Box>
+          
+          {/* Contact limit warnings */}
+          {(contacts?.length || 0) >= (getMaxContactsPerUser() * 0.9) && (contacts?.length || 0) < getMaxContactsPerUser() && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              You're approaching the contact limit. You have {getMaxContactsPerUser() - (contacts?.length || 0)} contacts remaining.
+            </Alert>
+          )}
+          
+          {(contacts?.length || 0) >= getMaxContactsPerUser() && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              You have reached the maximum limit of {getMaxContactsPerUser()} contacts. Please delete some contacts before adding new ones.
+            </Alert>
+          )}
 
         {/* Alphabet Filters */}
         <div style={{ marginBottom: 24, overflowX: 'auto' }}>

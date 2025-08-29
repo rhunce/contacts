@@ -16,6 +16,8 @@ env:
   APP_NAME: ${{ vars.APP_NAME }}
   NODE_ENV: ${{ vars.NODE_ENV }}
   ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
+  MAX_USERS: ${{ vars.MAX_USERS }}
+  MAX_CONTACTS_PER_USER: ${{ vars.MAX_CONTACTS_PER_USER }}
 
 jobs:
   deploy-backend:
@@ -55,9 +57,13 @@ jobs:
       id: deploy
       working-directory: ./infra
       run: |
-        # Set CORS_ORIGIN for the backend deployment
+        # Set environment variables for the backend deployment
         export CORS_ORIGIN="https://${ROOT_DOMAIN}"
+        export MAX_USERS="${MAX_USERS:-50}"
+        export MAX_CONTACTS_PER_USER="${MAX_CONTACTS_PER_USER:-50}"
         echo "Setting CORS_ORIGIN to: $CORS_ORIGIN"
+        echo "Setting MAX_USERS to: $MAX_USERS"
+        echo "Setting MAX_CONTACTS_PER_USER to: $MAX_CONTACTS_PER_USER"
         
         npx cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
@@ -119,6 +125,12 @@ jobs:
       working-directory: ./frontend
       run: |
         export NEXT_PUBLIC_API_URL="${{ needs.deploy-backend.outputs.api-url }}"
+        export NEXT_PUBLIC_MAX_USERS="${MAX_USERS:-50}"
+        export NEXT_PUBLIC_MAX_CONTACTS_PER_USER="${MAX_CONTACTS_PER_USER:-50}"
+        echo "Building frontend with:"
+        echo "  API URL: $NEXT_PUBLIC_API_URL"
+        echo "  Max Users: $NEXT_PUBLIC_MAX_USERS"
+        echo "  Max Contacts Per User: $NEXT_PUBLIC_MAX_CONTACTS_PER_USER"
         npm run build
 
     - name: Deploy frontend to S3

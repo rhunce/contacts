@@ -67,7 +67,7 @@ router.post('/register', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.error('Internal server error');
+    res.appError(error);
   }
 });
 

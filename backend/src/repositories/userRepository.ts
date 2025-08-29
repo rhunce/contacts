@@ -63,4 +63,8 @@ export class UserRepository {
     });
     return count > 0;
   }
+
+  async getUserCount(): Promise<number> {
+    return prisma.user.count();
+  }
 }

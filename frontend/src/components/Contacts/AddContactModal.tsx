@@ -11,6 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { CreateContactRequest } from '@/types/contact';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 interface AddContactModalProps {
   open: boolean;
@@ -51,23 +52,8 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       await onSubmit(formData);
       setFormData({ firstName: '', lastName: '', email: '', phone: '' });
     } catch (error: any) {
-      // Handle specific error cases
-      if (error.response?.data?.errors) {
-        const emailError = error.response.data.errors.find((err: any) => err.field === 'email');
-        if (emailError) {
-          setError('You already have a contact with this email address');
-          return;
-        }
-      }
-      
-      // Handle timeout errors
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        setError('Request timed out. The server is processing your request, but it may take longer than expected. Please try again.');
-        return;
-      }
-      
-      // Handle other errors
-      setError(error.message || 'Failed to create contact. Please try again.');
+      // Use structured error handling
+      setError(getErrorMessage(error));
     }
   };
 

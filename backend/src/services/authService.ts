@@ -3,6 +3,7 @@ import { UserRepository } from '../repositories/userRepository';
 import { InternalUserDto } from '../dtos/internal/user.dto';
 import { UserSessionDto, LoginRequestDto } from '../dtos/external/user.dto';
 import { UserMapper } from '../dtos/mappers/user.mapper';
+import { AppErrorClass } from '../utils/errors';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -60,6 +61,13 @@ export class AuthService {
     firstName: string;
     lastName: string;
   }): Promise<InternalUserDto> {
+    // Check user limit (configurable via environment variable)
+    const maxUsers = parseInt(process.env.MAX_USERS || '50');
+    const userCount = await this.userRepository.getUserCount();
+    if (userCount >= maxUsers) {
+      throw AppErrorClass.userLimitReached(maxUsers);
+    }
+
     // Hash the password
     const hashedPassword = await this.hashPassword(userData.password);
 

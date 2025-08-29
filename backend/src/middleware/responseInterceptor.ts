@@ -13,6 +13,7 @@ declare global {
       forbidden: (message?: string) => void;
       conflict: (message: string, field?: string) => void;
       paginated: (items: any[], pagination: any, status?: number) => void;
+      appError: (error: any) => void;
     }
   }
 }
@@ -51,6 +52,11 @@ export const responseInterceptor = (req: Request, res: Response, next: NextFunct
 
   res.conflict = (message: string, field?: string) => {
     const response = ResponseFormatter.conflict(message, field);
+    res.status(response.status).json(response);
+  };
+
+  res.appError = (error: any) => {
+    const response = ResponseFormatter.appError(error);
     res.status(response.status).json(response);
   };
 

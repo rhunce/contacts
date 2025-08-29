@@ -1,6 +1,7 @@
 import { ContactRepository } from '../repositories/contactRepository';
 import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
 import { SSEEventManager } from './sseEventManager';
+import { AppErrorClass } from '../utils/errors';
 import { 
   InternalContactWithOwnerDto, 
   InternalCreateContactDto, 
@@ -68,7 +69,14 @@ export class ContactService {
     // Check if contact with same email already exists for this owner
     const exists = await this.contactRepository.existsByEmailAndOwner(internalData.email, internalData.ownerId);
     if (exists) {
-      throw new Error('Contact with this email already exists');
+      throw AppErrorClass.duplicateEmail();
+    }
+
+    // Check contact limit (configurable via environment variable)
+    const maxContacts = parseInt(process.env.MAX_CONTACTS_PER_USER || '50');
+    const contactCount = await this.contactRepository.getContactCountByOwner(ownerId);
+    if (contactCount >= maxContacts) {
+      throw AppErrorClass.contactLimitReached(maxContacts);
     }
 
     // Simulate 20-second delay as requested

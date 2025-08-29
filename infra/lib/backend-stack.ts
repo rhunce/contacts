@@ -106,7 +106,9 @@ export class BackendStack extends cdk.Stack {
           environment: { 
             PORT: '3000', 
             NODE_ENV: 'production',
-            CORS_ORIGIN: process.env.CORS_ORIGIN || `https://${props.rootDomain}`
+            CORS_ORIGIN: process.env.CORS_ORIGIN || `https://${props.rootDomain}`,
+            MAX_USERS: process.env.MAX_USERS || '50',
+            MAX_CONTACTS_PER_USER: process.env.MAX_CONTACTS_PER_USER || '50'
           },
           secrets: {
             PGHOST: ecs.Secret.fromSecretsManager(dbCluster.secret!, 'host'),

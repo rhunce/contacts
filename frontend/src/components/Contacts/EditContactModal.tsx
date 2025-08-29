@@ -11,6 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Contact, UpdateContactRequest } from '@/types/contact';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 interface EditContactModalProps {
   open: boolean;
@@ -64,17 +65,8 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     try {
       await onSubmit(formData);
     } catch (error: any) {
-      // Handle specific error cases
-      if (error.response?.data?.errors) {
-        const emailError = error.response.data.errors.find((err: any) => err.field === 'email');
-        if (emailError) {
-          setError('You already have a contact with this email address');
-          return;
-        }
-      }
-      
-      // Handle other errors
-      setError(error.message || 'Failed to update contact. Please try again.');
+      // Use structured error handling
+      setError(getErrorMessage(error));
     }
   };
 

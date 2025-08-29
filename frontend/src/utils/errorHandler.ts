@@ -1,0 +1,82 @@
+import { ErrorType, AppError } from '@/types/errors';
+import { getMaxUsers, getMaxContactsPerUser } from './limits';
+
+export function getErrorType(error: any): ErrorType | null {
+  // Check if it's a structured error from our backend
+  if (error?.response?.data?.type) {
+    return error.response.data.type as ErrorType;
+  }
+  
+  // Check if it's an AppError instance
+  if (error?.type) {
+    return error.type as ErrorType;
+  }
+  
+  // Network/timeout errors (these are external to our app)
+  if (error?.code === 'ECONNABORTED') {
+    return ErrorType.TIMEOUT_ERROR;
+  }
+  
+  // Log unstructured errors for debugging
+  if (error && !error?.response?.data?.type && !error?.type && error?.code !== 'ECONNABORTED') {
+    console.warn('Unstructured error detected:', {
+      error,
+      message: error?.message,
+      response: error?.response?.data,
+      status: error?.response?.status
+    });
+  }
+  
+  return null;
+}
+
+export function getErrorMessage(error: any): string {
+  const errorType = getErrorType(error);
+  
+  switch (errorType) {
+    case ErrorType.USER_LIMIT_REACHED:
+      return `Maximum number of users reached (${getMaxUsers()}). Registration is temporarily disabled.`;
+    
+    case ErrorType.CONTACT_LIMIT_REACHED:
+      return `You have reached the maximum limit of ${getMaxContactsPerUser()} contacts. Please delete some contacts before adding new ones.`;
+    
+    case ErrorType.DUPLICATE_EMAIL:
+      return 'You already have a contact with this email address';
+    
+    case ErrorType.TIMEOUT_ERROR:
+      return 'Request timed out. The server is processing your request, but it may take longer than expected. Please try again.';
+    
+    case ErrorType.VALIDATION_ERROR:
+      return error?.response?.data?.message || error?.message || 'Validation error occurred.';
+    
+    case ErrorType.UNAUTHORIZED:
+      return 'You are not authorized to perform this action.';
+    
+    case ErrorType.NOT_FOUND:
+      return 'The requested resource was not found.';
+    
+    default:
+      // For unstructured errors, try to get a meaningful message
+      const message = error?.response?.data?.message || error?.message;
+      if (message) {
+        return message;
+      }
+      
+      // Log unexpected errors for debugging
+      console.error('Unstructured error received:', error);
+      return 'An unexpected error occurred. Please try again.';
+  }
+}
+
+export function isLimitError(error: any): boolean {
+  const errorType = getErrorType(error);
+  return errorType === ErrorType.USER_LIMIT_REACHED || errorType === ErrorType.CONTACT_LIMIT_REACHED;
+}
+
+export function isDuplicateEmailError(error: any): boolean {
+  return getErrorType(error) === ErrorType.DUPLICATE_EMAIL;
+}
+
+export function isTimeoutError(error: any): boolean {
+  return getErrorType(error) === ErrorType.TIMEOUT_ERROR;
+}

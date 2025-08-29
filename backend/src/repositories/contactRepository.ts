@@ -160,4 +160,10 @@ export class ContactRepository {
       }
     });
   }
+
+  async getContactCountByOwner(ownerId: string): Promise<number> {
+    return prisma.contact.count({
+      where: { ownerId }
+    });
+  }
 }

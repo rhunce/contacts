@@ -81,18 +81,7 @@ router.post('/', async (req: AuthenticatedRequest, res: Response) => {
     res.success(contact, 201);
   } catch (error: any) {
     console.error('Error creating contact:', error);
-    
-    if (error.message?.includes('already exists')) {
-      return res.conflict(error.message, 'email');
-    }
-    
-    if (error.message?.includes('Validation failed')) {
-      return res.validationError([
-        { message: error.message, field: 'validation' }
-      ]);
-    }
-
-    res.error('Internal server error');
+    res.appError(error);
   }
 });
 
@@ -112,22 +101,7 @@ router.patch('/:id', async (req: AuthenticatedRequest, res: Response) => {
     res.success(updatedContact);
   } catch (error: any) {
     console.error('Error updating contact:', error);
-    
-    if (error.message === 'Contact not found') {
-      return res.notFound('Contact not found');
-    }
-    
-    if (error.message?.includes('already exists')) {
-      return res.conflict(error.message, 'email');
-    }
-    
-    if (error.message === 'No changes provided') {
-      return res.validationError([
-        { message: 'No changes provided', field: 'update' }
-      ]);
-    }
-
-    res.error('Internal server error');
+    res.appError(error);
   }
 });
 
@@ -145,12 +119,7 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
     res.success(contact);
   } catch (error: any) {
     console.error('Error deleting contact:', error);
-    
-    if (error.message === 'Contact not found') {
-      return res.notFound('Contact not found');
-    }
-
-    res.error('Internal server error');
+    res.appError(error);
   }
 });
 
