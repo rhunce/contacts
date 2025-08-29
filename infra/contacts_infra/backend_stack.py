@@ -45,7 +45,7 @@ class BackendStack(Stack):
         db_cluster = self._create_database()
         
         # Redis for session storage
-        redis_replication_group = self._create_redis()
+        redis_replication_group, redis_sg = self._create_redis()
         
         # Session secret
         session_secret = self._create_session_secret()
@@ -72,12 +72,22 @@ class BackendStack(Stack):
         
         # ECS Fargate service
         fargate_service = self._create_fargate_service(
-            db_cluster, 
-            redis_replication_group, 
-            session_secret,
-            cert,
-            api_domain_name,
-            zone
+            db_cluster=db_cluster,
+            redis_replication_group=redis_replication_group,
+            session_secret=session_secret,
+            cert=cert,
+            api_domain_name=api_domain_name,
+            zone=zone,
+        )
+
+        # Allow ECS -> DB
+        db_cluster.connections.allow_default_port_from(fargate_service.service, "ECS tasks to Aurora")
+
+        # Allow ECS -> Redis 6379
+        redis_sg.add_ingress_rule(
+            fargate_service.service.connections.security_groups[0],
+            ec2.Port.tcp(6379),
+            "ECS tasks to Redis TLS",
         )
         
         # Store domain name for outputs
@@ -133,28 +143,29 @@ class BackendStack(Stack):
             backup=rds.BackupProps(retention=Duration.days(7), preferred_window="03:00-04:00"),
             deletion_protection=False,
             removal_policy=RemovalPolicy.DESTROY,
+            credentials=rds.Credentials.from_generated_secret("postgres"),
         )
 
     
-    def _create_redis(self) -> elasticache.CfnReplicationGroup:
-        """Create ElastiCache Redis cluster"""
+    def _create_redis(self) -> tuple[elasticache.CfnReplicationGroup, ec2.SecurityGroup]:
+        """Create ElastiCache Redis cluster + SG and return both"""
         redis_security_group = ec2.SecurityGroup(
-            self, 
+            self,
             f"{self.app_name}RedisSecurityGroup",
             vpc=self.vpc,
             description="Security group for Redis ElastiCache",
-            allow_all_outbound=True
+            allow_all_outbound=True,
         )
-        
+
         redis_subnet_group = elasticache.CfnSubnetGroup(
-            self, 
+            self,
             f"{self.app_name}RedisSubnetGroup",
             description="Subnet group for Redis ElastiCache",
-            subnet_ids=[subnet.subnet_id for subnet in self.vpc.private_subnets]
+            subnet_ids=[s.subnet_id for s in self.vpc.isolated_subnets],
         )
-        
-        return elasticache.CfnReplicationGroup(
-            self, 
+
+        rg = elasticache.CfnReplicationGroup(
+            self,
             f"{self.app_name}Redis",
             replication_group_description="Redis cluster for session storage",
             num_cache_clusters=1,
@@ -165,8 +176,10 @@ class BackendStack(Stack):
             security_group_ids=[redis_security_group.security_group_id],
             at_rest_encryption_enabled=True,
             transit_encryption_enabled=True,
-            automatic_failover_enabled=False
+            automatic_failover_enabled=False,
         )
+        return rg, redis_security_group
+
     
     def _create_session_secret(self) -> secretsmanager.Secret:
         """Create session secret"""
@@ -186,20 +199,17 @@ class BackendStack(Stack):
         session_secret: secretsmanager.Secret,
         cert: Optional[acm.ICertificate],
         api_domain_name: Optional[str],
-        zone: Optional[route53.IHostedZone]
+        zone: Optional[route53.IHostedZone],
     ) -> ecs_patterns.ApplicationLoadBalancedFargateService:
-        """Create ECS Fargate service with load balancer"""
-        
-        # Environment variables
+        """Create ECS Fargate service + ALB with proper HTTPS and domain configuration."""
         environment = {
             "PORT": "3000",
             "NODE_ENV": "production",
             "CORS_ORIGIN": os.getenv("CORS_ORIGIN", f"https://{self.root_domain}" if self.root_domain else ""),
             "MAX_USERS": os.getenv("MAX_USERS", "50"),
-            "MAX_CONTACTS_PER_USER": os.getenv("MAX_CONTACTS_PER_USER", "50")
+            "MAX_CONTACTS_PER_USER": os.getenv("MAX_CONTACTS_PER_USER", "50"),
         }
-        
-        # Secrets
+
         secrets = {
             "PGHOST": ecs.Secret.from_secrets_manager(db_cluster.secret, "host"),
             "PGPORT": ecs.Secret.from_secrets_manager(db_cluster.secret, "port"),
@@ -209,84 +219,76 @@ class BackendStack(Stack):
             "SESSION_SECRET": ecs.Secret.from_secrets_manager(session_secret),
             "REDIS_URL": ecs.Secret.from_secrets_manager(
                 secretsmanager.Secret(
-                    self, 
+                    self,
                     f"{self.app_name}RedisUrl",
+                    secret_name=f"{self.app_name.lower()}-redis-url",
                     secret_string_value=SecretValue.unsafe_plain_text(
                         f"rediss://{redis_replication_group.attr_primary_end_point_address}:6379"
-                    )
+                    ),
                 )
-            )
+            ),
         }
-        
-        # Task image options
+
         task_image_options = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
             image=ecs.ContainerImage.from_asset("../backend"),
             container_port=3000,
             environment=environment,
-            secrets=secrets
+            secrets=secrets,
         )
-        
-        # Create Fargate service
-        fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(
-            self, 
-            f"{self.app_name}FargateService",
-            cluster=ecs.Cluster(self, f"{self.app_name}EcsCluster", vpc=self.vpc),
-            public_load_balancer=True,
-            task_image_options=task_image_options
-        )
-        
-        # Configure HTTPS if domain is provided
+
+        # Create ECS cluster
+        cluster = ecs.Cluster(self, f"{self.app_name}EcsCluster", vpc=self.vpc)
+
+        # Configure Fargate service with proper listener setup
         if cert and api_domain_name and zone:
-            fargate_service.target_group.configure_health_check(
-                path="/health", 
-                healthy_http_codes="200"
-            )
-            
-            # Add HTTPS listener
-            https_listener = fargate_service.load_balancer.add_listener(
-                "HttpsListener",
-                port=443,
+            # HTTPS with custom domain
+            fargate = ecs_patterns.ApplicationLoadBalancedFargateService(
+                self,
+                f"{self.app_name}FargateService",
+                cluster=cluster,
+                public_load_balancer=True,
+                task_image_options=task_image_options,
+                certificate=cert,
+                domain_name=api_domain_name,
+                domain_zone=zone,
+                redirect_http=True,
                 protocol=elbv2.ApplicationProtocol.HTTPS,
-                certificates=[cert],
-                default_action=elbv2.ListenerAction.forward([fargate_service.target_group])
+                desired_count=1,
+                cpu=256,
+                memory_limit_mib=512,
             )
-            
-            # Redirect HTTP to HTTPS
-            fargate_service.load_balancer.add_listener(
-                "HttpListener",
-                port=80,
+        else:
+            # HTTP only (for development/testing)
+            fargate = ecs_patterns.ApplicationLoadBalancedFargateService(
+                self,
+                f"{self.app_name}FargateService",
+                cluster=cluster,
+                public_load_balancer=True,
+                task_image_options=task_image_options,
                 protocol=elbv2.ApplicationProtocol.HTTP,
-                default_action=elbv2.ListenerAction.redirect(
-                    protocol="HTTPS",
-                    port="443"
-                )
+                desired_count=1,
+                cpu=256,
+                memory_limit_mib=512,
             )
-            
-            # Create DNS record
-            route53.ARecord(
-                self, 
-                f"{self.app_name}ApiAlias",
-                zone=zone,
-                record_name=api_domain_name,
-                target=route53.RecordTarget.from_alias(
-                    targets.LoadBalancerTarget(fargate_service.load_balancer)
-                )
-            )
-        
-        # Configure networking
-        db_cluster.connections.allow_default_port_from(
-            fargate_service.service, 
-            "ECS tasks to Aurora"
+
+        # Configure health check
+        fargate.target_group.configure_health_check(
+            path="/health", 
+            healthy_http_codes="200",
+            interval=Duration.seconds(30),
+            timeout=Duration.seconds(5),
+            healthy_threshold_count=2,
+            unhealthy_threshold_count=3
         )
-        
+
         # Grant secrets access
-        db_cluster.secret.grant_read(fargate_service.task_definition.task_role)
-        db_cluster.secret.grant_read(fargate_service.task_definition.execution_role)
-        session_secret.grant_read(fargate_service.task_definition.task_role)
-        session_secret.grant_read(fargate_service.task_definition.execution_role)
-        
-        return fargate_service
-    
+        db_cluster.secret.grant_read(fargate.task_definition.task_role)
+        db_cluster.secret.grant_read(fargate.task_definition.execution_role)
+        session_secret.grant_read(fargate.task_definition.task_role)
+        session_secret.grant_read(fargate.task_definition.execution_role)
+
+        return fargate
+
     def _create_outputs(
         self,
         fargate_service: ecs_patterns.ApplicationLoadBalancedFargateService,
