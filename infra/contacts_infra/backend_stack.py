@@ -94,6 +94,7 @@ class BackendStack(Stack):
             f"{self.app_name}Vpc",
             max_azs=2,
             nat_gateways=1,
+            ip_addresses=ec2.IpAddresses.cidr("172.16.0.0/16"),
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="Public",
