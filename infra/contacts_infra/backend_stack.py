@@ -170,7 +170,8 @@ class BackendStack(Stack):
             cache_subnet_group_name=redis_subnet_group.ref,
             security_group_ids=[redis_security_group.security_group_id],
             at_rest_encryption_enabled=True,
-            transit_encryption_enabled=True
+            transit_encryption_enabled=True,
+            automatic_failover_enabled=False
         )
     
     def _create_session_secret(self) -> secretsmanager.Secret:
