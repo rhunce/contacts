@@ -1,25 +1,10 @@
 import api from './api';
 import { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth';
 
-// Simple client-side hashing function (in production, use a proper crypto library)
-const hashPassword = async (password: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-};
-
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      // Hash the password on the client side
-      const hashedPassword = await hashPassword(credentials.password);
-      const response = await api.post('/login', {
-        email: credentials.email,
-        hashedPassword
-      });
+      const response = await api.post('/login', credentials);
       return response.data;
     } catch (error: any) {
       // Handle specific error cases
@@ -38,12 +23,7 @@ export const authService = {
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      // Hash the password on the client side
-      const hashedPassword = await hashPassword(userData.password);
-      const response = await api.post('/register', {
-        ...userData,
-        password: hashedPassword
-      });
+      const response = await api.post('/register', userData);
       return response.data;
     } catch (error: any) {
       // Handle specific error cases

@@ -41,7 +41,7 @@ export interface UserSessionDto {
 
 export interface LoginRequestDto {
   email: string;
-  hashedPassword: string; // Client-side hashed password
+  password: string; // Plain text password (sent over HTTPS)
 }
 
 // Import contact DTO for the UserWithContactsDto

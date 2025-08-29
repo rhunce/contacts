@@ -12,7 +12,7 @@ export class AuthService {
   }
 
   async validateCredentials(credentials: LoginRequestDto): Promise<InternalUserDto | null> {
-    const { email, hashedPassword } = credentials;
+    const { email, password } = credentials;
 
     // Find user by email
     const user = await this.userRepository.findByEmail(email);
@@ -21,7 +21,7 @@ export class AuthService {
     }
 
     // Compare password
-    const isValidPassword = await bcrypt.compare(hashedPassword, user.password);
+    const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
       return null;
     }

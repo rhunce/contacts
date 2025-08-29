@@ -74,16 +74,16 @@ router.post('/register', async (req: Request, res: Response) => {
 // POST /login - Login user
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, hashedPassword }: LoginRequestDto = req.body;
+    const { email, password }: LoginRequestDto = req.body;
 
-    if (!email || !hashedPassword) {
+    if (!email || !password) {
       return res.validationError([
         { message: 'Email and password are required', field: 'credentials' }
       ]);
     }
 
     // Validate credentials
-    const user = await authService.validateCredentials({ email, hashedPassword });
+    const user = await authService.validateCredentials({ email, password });
     if (!user) {
       return res.unauthorized('Invalid credentials');
     }
