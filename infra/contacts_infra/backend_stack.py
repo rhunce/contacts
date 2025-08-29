@@ -115,32 +115,26 @@ class BackendStack(Stack):
         )
     
     def _create_database(self) -> rds.DatabaseCluster:
-        """Create Aurora PostgreSQL database cluster"""
+        """Create Aurora PostgreSQL cluster"""
         return rds.DatabaseCluster(
-            self, 
+            self,
             f"{self.app_name}Database",
             engine=rds.DatabaseClusterEngine.aurora_postgres(
                 version=rds.AuroraPostgresEngineVersion.VER_15_4
             ),
-            instance_props=rds.InstanceProps(
-                vpc=self.vpc,
-                vpc_subnets=ec2.SubnetSelection(
-                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
-                ),
-                instance_type=ec2.InstanceType.of(
-                    ec2.InstanceClass.T3, 
-                    ec2.InstanceSize.SMALL
-                )
-            ),
-            instances=1,
+            writer=rds.ClusterInstance.serverless_v2("writer"),
+            # Optional read replica:
+            # readers=[rds.ClusterInstance.serverless_v2("reader")],
+            serverless_v2_min_capacity=0.5,
+            serverless_v2_max_capacity=2,
+            vpc=self.vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             storage_encrypted=True,
-            backup=rds.BackupProps(
-                retention=Duration.days(7),
-                preferred_window="03:00-04:00"
-            ),
+            backup=rds.BackupProps(retention=Duration.days(7), preferred_window="03:00-04:00"),
             deletion_protection=False,
-            removal_policy=RemovalPolicy.DESTROY
+            removal_policy=RemovalPolicy.DESTROY,
         )
+
     
     def _create_redis(self) -> elasticache.CfnReplicationGroup:
         """Create ElastiCache Redis cluster"""
