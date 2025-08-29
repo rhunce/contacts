@@ -4,9 +4,14 @@ export interface Contact {
   lastName: string;
   email: string;
   phone: string;
-  ownerId: string;
   createdAt: string;
   updatedAt: string;
+  owner: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export interface CreateContactRequest {
