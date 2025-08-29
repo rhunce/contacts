@@ -26,14 +26,12 @@ export interface UpdateContactRequest {
 export interface ContactListResponse {
   status: number;
   data: {
-    contacts: Contact[];
+    items: Contact[];
     pagination: {
       page: number;
-      limit: number;
+      pageSize: number;
       total: number;
       totalPages: number;
-      hasNext: boolean;
-      hasPrev: boolean;
     };
   };
   errors: any[];

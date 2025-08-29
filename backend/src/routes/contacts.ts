@@ -15,11 +15,11 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       return res.unauthorized();
     }
 
-    const { page = '1', pageSize = '10' } = req.query as PaginationQueryDto;
+    const { page = '1', pageSize = '10', filter } = req.query as PaginationQueryDto & { filter?: string };
     const pageNum = parseInt(page);
     const pageSizeNum = parseInt(pageSize);
 
-    const result = await contactService.getContacts(session.userId, pageNum, pageSizeNum);
+    const result = await contactService.getContacts(session.userId, pageNum, pageSizeNum, filter);
     
     res.paginated(result.data, result.pagination);
   } catch (error) {

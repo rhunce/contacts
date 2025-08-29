@@ -19,7 +19,7 @@ export const useContacts = (filter?: string) => {
     ({ pageParam = 1 }) => contactService.getContacts(pageParam, 20, filter),
     {
       getNextPageParam: (lastPage) => {
-        if (lastPage.data.pagination.hasNext) {
+        if (lastPage.data.pagination.page < lastPage.data.pagination.totalPages) {
           return lastPage.data.pagination.page + 1;
         }
         return undefined;
@@ -61,7 +61,7 @@ export const useContacts = (filter?: string) => {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const allContacts = data?.pages.flatMap(page => page.data.contacts) || [];
+  const allContacts = data?.pages.flatMap(page => page.data.items) || [];
 
   return {
     contacts: allContacts,

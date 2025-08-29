@@ -32,10 +32,20 @@ export class ContactRepository {
     });
   }
 
-  async findByOwnerId(ownerId: string, options: PaginationOptionsDto): Promise<PaginationResultDto<InternalContactWithOwnerDto>> {
+  async findByOwnerId(ownerId: string, options: PaginationOptionsDto, filter?: string): Promise<PaginationResultDto<InternalContactWithOwnerDto>> {
+    // Build where clause with optional filter
+    const whereClause: any = { ownerId };
+    
+    if (filter && filter !== 'all') {
+      whereClause.lastName = {
+        startsWith: filter,
+        mode: 'insensitive' // Case-insensitive search
+      };
+    }
+
     const [contacts, total] = await Promise.all([
       prisma.contact.findMany({
-        where: { ownerId },
+        where: whereClause,
         orderBy: [
           { lastName: 'asc' },
           { firstName: 'asc' },
@@ -58,7 +68,7 @@ export class ContactRepository {
         }
       }),
       prisma.contact.count({
-        where: { ownerId }
+        where: whereClause
       })
     ]);
 

@@ -30,14 +30,14 @@ export class ContactService {
     this.contactHistoryRepository = new ContactHistoryRepository();
   }
 
-  async getContacts(ownerId: string, page: number, pageSize: number): Promise<PaginationResultDto<ContactDto>> {
+  async getContacts(ownerId: string, page: number, pageSize: number, filter?: string): Promise<PaginationResultDto<ContactDto>> {
     const options: PaginationOptionsDto = {
       page,
       pageSize,
       skip: (page - 1) * pageSize
     };
 
-    const internalResult = await this.contactRepository.findByOwnerId(ownerId, options);
+    const internalResult = await this.contactRepository.findByOwnerId(ownerId, options, filter);
     
     // Transform internal DTOs to external DTOs
     const externalData = internalResult.data.map(contact => ContactMapper.toContactWithOwnerDto(contact));
