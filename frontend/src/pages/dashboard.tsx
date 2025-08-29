@@ -113,7 +113,7 @@ const DashboardPage: React.FC = () => {
           {/* Contact limit warnings */}
           {(contacts?.length || 0) >= (getMaxContactsPerUser() * 0.9) && (contacts?.length || 0) < getMaxContactsPerUser() && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              You're approaching the contact limit. You have {getMaxContactsPerUser() - (contacts?.length || 0)} contacts remaining.
+              You&apos;re approaching the contact limit. You have {getMaxContactsPerUser() - (contacts?.length || 0)} contacts remaining.
             </Alert>
           )}
           
