@@ -252,7 +252,7 @@ class BackendStack(Stack):
             https_listener = fargate_service.load_balancer.add_listener(
                 "HttpsListener",
                 port=443,
-                protocol=ec2.Protocol.TCP,
+                protocol=elbv2.ApplicationProtocol.HTTPS,
                 certificates=[cert],
                 default_action=elbv2.ListenerAction.forward([fargate_service.target_group])
             )
@@ -261,7 +261,7 @@ class BackendStack(Stack):
             fargate_service.load_balancer.add_listener(
                 "HttpListener",
                 port=80,
-                protocol=ec2.Protocol.TCP,
+                protocol=elbv2.ApplicationProtocol.HTTP,
                 default_action=elbv2.ListenerAction.redirect(
                     protocol="HTTPS",
                     port="443"
