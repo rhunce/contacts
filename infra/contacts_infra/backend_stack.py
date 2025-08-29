@@ -14,8 +14,10 @@ from aws_cdk import (
     aws_elasticache as elasticache,
     aws_secretsmanager as secretsmanager,
     aws_route53 as route53,
+    aws_route53_targets as targets,
     aws_certificatemanager as acm,
-    aws_iam as iam
+    aws_iam as iam,
+    aws_elasticloadbalancingv2 as elbv2
 )
 from constructs import Construct
 
@@ -252,7 +254,7 @@ class BackendStack(Stack):
                 port=443,
                 protocol=ec2.Protocol.TCP,
                 certificates=[cert],
-                default_action=ecs_patterns.ListenerAction.forward([fargate_service.target_group])
+                default_action=elbv2.ListenerAction.forward([fargate_service.target_group])
             )
             
             # Redirect HTTP to HTTPS
@@ -260,7 +262,7 @@ class BackendStack(Stack):
                 "HttpListener",
                 port=80,
                 protocol=ec2.Protocol.TCP,
-                default_action=ecs_patterns.ListenerAction.redirect(
+                default_action=elbv2.ListenerAction.redirect(
                     protocol="HTTPS",
                     port="443"
                 )
@@ -273,7 +275,7 @@ class BackendStack(Stack):
                 zone=zone,
                 record_name=api_domain_name,
                 target=route53.RecordTarget.from_alias(
-                    ecs_patterns.LoadBalancerTarget(fargate_service.load_balancer)
+                    targets.LoadBalancerTarget(fargate_service.load_balancer)
                 )
             )
         
