@@ -30,12 +30,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: infra/package-lock.json
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: infra/requirements.txt
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -44,13 +44,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       working-directory: ./infra
-      run: npm ci --include=dev
+      run: pip install -r requirements.txt
 
     - name: CDK Bootstrap
       working-directory: ./infra
-      run: npx cdk bootstrap aws://${{ env.CDK_DEFAULT_ACCOUNT }}/${{ env.CDK_DEFAULT_REGION }}
+      run: cdk bootstrap aws://${{ env.CDK_DEFAULT_ACCOUNT }}/${{ env.CDK_DEFAULT_REGION }}
       continue-on-error: true
 
     - name: Deploy Backend Stack
@@ -65,7 +65,7 @@ jobs:
         echo "Setting MAX_USERS to: $MAX_USERS"
         echo "Setting MAX_CONTACTS_PER_USER to: $MAX_CONTACTS_PER_USER"
         
-        npx cdk deploy ${APP_NAME}BackendStack --require-approval never
+        cdk deploy ${APP_NAME}BackendStack --require-approval never
         ALB_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`AlbUrl`].OutputValue' --output text)
         API_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}BackendStack --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' --output text)
         echo "alb-url=$ALB_URL" >> $GITHUB_OUTPUT
@@ -82,12 +82,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Python
+      uses: actions/setup-python@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: infra/package-lock.json
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: infra/requirements.txt
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -96,15 +96,15 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.CDK_DEFAULT_REGION }}
 
-    - name: Install dependencies
+    - name: Install Python dependencies
       working-directory: ./infra
-      run: npm ci --include=dev
+      run: pip install -r requirements.txt
 
     - name: Deploy Frontend Infrastructure
       id: deploy-frontend
       working-directory: ./infra
       run: |
-        npx cdk deploy ${APP_NAME}FrontendStack --require-approval never
+        cdk deploy ${APP_NAME}FrontendStack --require-approval never
         FRONTEND_URL=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}FrontendStack --query 'Stacks[0].Outputs[?OutputKey==`FrontendUrl`].OutputValue' --output text)
         CLOUDFRONT_ID=$(aws cloudformation describe-stacks --stack-name ${APP_NAME}FrontendStack --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' --output text)
         echo "frontend-url=$FRONTEND_URL" >> $GITHUB_OUTPUT
