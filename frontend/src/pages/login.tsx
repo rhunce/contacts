@@ -27,16 +27,12 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
-    console.log('Login attempt started for:', email);
 
     try {
       await login(email, password);
-      console.log('Login successful, redirecting to dashboard');
       toast.success('Login successful!');
       router.push('/dashboard');
     } catch (err: any) {
-      console.log('Login failed with error:', err);
       setError(err.message || 'Login failed');
       toast.error(err.message || 'Login failed');
     } finally {

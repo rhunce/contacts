@@ -43,10 +43,17 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         // Only redirect if we're in the browser and not already on login/register page
         const currentPath = window.location.pathname;
-        if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
+        const isAuthPage = currentPath === '/login' || currentPath === '/register' || currentPath === '/';
+        
+        // Don't redirect if we're on an auth page or if this is a /me call (auth check)
+        const isMeCall = error.config?.url?.includes('/me');
+        
+        if (!isAuthPage && !isMeCall) {
+          console.log('API Interceptor: Redirecting to login due to 401 on protected page');
           window.location.href = '/login';
+        } else {
+          console.log('API Interceptor: 401 on auth page or /me call, not redirecting');
         }
-        // If we're already on login/register page, don't redirect - let the component handle the error
       }
     }
     

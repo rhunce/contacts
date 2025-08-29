@@ -4,15 +4,11 @@ import { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth';
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      console.log('authService: Making login API call');
       const response = await api.post('/login', credentials);
-      console.log('authService: Login API response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.log('authService: Login API error:', error);
       // Handle specific error cases
       if (error.response?.status === 401) {
-        console.log('authService: 401 error, throwing invalid credentials');
         throw new Error('Invalid email or password');
       }
       if (error.response?.status === 422) {

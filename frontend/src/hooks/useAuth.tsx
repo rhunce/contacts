@@ -59,19 +59,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('useAuth: Calling authService.login');
       const response = await authService.login({ email, password });
-      console.log('useAuth: Received response:', response);
       
       if (response.data?.user) {
-        console.log('useAuth: Setting user:', response.data.user);
         setUser(response.data.user);
       } else {
-        console.log('useAuth: No user in response, throwing error');
         throw new Error(response.errors?.[0]?.message || 'Login failed');
       }
     } catch (error: any) {
-      console.log('useAuth: Login error caught:', error);
       // Clear user state on login failure
       setUser(null);
       throw error;
