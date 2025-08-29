@@ -63,7 +63,9 @@ export class ContactService {
     // Validate contact data
     const validation = this.validateContactData(internalData);
     if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      // Use the first validation error for now (we can enhance this later to show multiple errors)
+      const firstError = validation.errors[0];
+      throw AppErrorClass.validationError(firstError.message, firstError.field);
     }
 
     // Check if contact with same email already exists for this owner
@@ -119,6 +121,13 @@ export class ContactService {
     }
 
     if (internalUpdateData.email && internalUpdateData.email !== currentContact.email) {
+      // Validate email format if it's being updated
+      if (!this.isValidEmail(internalUpdateData.email)) {
+        throw AppErrorClass.validationError(
+          'Please enter a valid email address (e.g., john.doe@example.com)', 
+          'email'
+        );
+      }
       finalUpdateData.email = internalUpdateData.email;
       historyChanges.email = { before: currentContact.email, after: internalUpdateData.email };
     }
@@ -129,14 +138,14 @@ export class ContactService {
     }
 
     if (Object.keys(finalUpdateData).length === 0) {
-      throw new Error('No changes provided');
+      throw AppErrorClass.validationError('No changes provided');
     }
 
     // Check for email conflicts if email is being updated
     if (finalUpdateData.email) {
       const exists = await this.contactRepository.existsByEmailAndOwner(finalUpdateData.email, ownerId);
       if (exists) {
-        throw new Error('Contact with this email already exists');
+        throw AppErrorClass.duplicateEmail();
       }
     }
 
@@ -158,7 +167,7 @@ export class ContactService {
   async deleteContact(id: string, ownerId: string): Promise<ContactDto> {
     const contact = await this.contactRepository.findById(id, ownerId);
     if (!contact) {
-      throw new Error('Contact not found');
+      throw AppErrorClass.validationError('Contact not found');
     }
 
     const deletedContact = await this.contactRepository.delete(id);
@@ -185,7 +194,10 @@ export class ContactService {
     if (!data.email?.trim()) {
       errors.push({ message: 'Email is required', field: 'email' });
     } else if (!this.isValidEmail(data.email)) {
-      errors.push({ message: 'Invalid email format', field: 'email' });
+      errors.push({ 
+        message: 'Please enter a valid email address (e.g., john.doe@example.com)', 
+        field: 'email' 
+      });
     }
 
     if (!data.phone?.trim()) {
@@ -199,7 +211,8 @@ export class ContactService {
   }
 
   private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // More comprehensive email validation regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   }
 }
