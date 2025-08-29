@@ -181,7 +181,9 @@ const DashboardPage: React.FC = () => {
                       setShowDeleteModal(true);
                     }}
                     onViewHistory={(contact) => {
-                      router.push(`/contact-history/${contact.id}`);
+                      if (contact?.id) {
+                        router.push(`/contact-history/${contact.id}`);
+                      }
                     }}
                   />
                 </Grid>

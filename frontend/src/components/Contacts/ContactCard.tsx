@@ -78,13 +78,13 @@ const ContactCard: React.FC<ContactCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Email sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary" noWrap>
-              {contact.email}
+              {contact?.email || 'No email'}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Phone sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary" noWrap>
-              {contact.phone}
+              {contact?.phone || 'No phone'}
             </Typography>
           </Box>
         </Box>

@@ -124,10 +124,10 @@ const ContactHistoryPage: React.FC = () => {
                       {contact?.firstName || 'Unknown'} {contact?.lastName || ''}
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                      {contact.email}
+                      {contact?.email || 'No email'}
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                      {contact.phone}
+                      {contact?.phone || 'No phone'}
                     </Typography>
                   </Box>
                 </Box>
