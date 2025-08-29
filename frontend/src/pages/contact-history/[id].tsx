@@ -117,11 +117,11 @@ const ContactHistoryPage: React.FC = () => {
                       mr: 3,
                     }}
                   >
-                    {contact.firstName.charAt(0)}{contact.lastName.charAt(0)}
+                    {(contact?.firstName?.charAt(0) || '')}{(contact?.lastName?.charAt(0) || '')}
                   </Avatar>
                   <Box>
                     <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-                      {contact.firstName} {contact.lastName}
+                      {contact?.firstName || 'Unknown'} {contact?.lastName || ''}
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
                       {contact.email}

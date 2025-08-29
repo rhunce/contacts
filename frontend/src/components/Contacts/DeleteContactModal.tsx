@@ -39,7 +39,7 @@ const DeleteContactModal: React.FC<DeleteContactModalProps> = ({
       <DialogContent>
         <Typography>
           Are you sure you want to delete{' '}
-          <strong>{contact.firstName} {contact.lastName}</strong>?
+          <strong>{contact?.firstName || 'Unknown'} {contact?.lastName || ''}</strong>?
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           This action cannot be undone.

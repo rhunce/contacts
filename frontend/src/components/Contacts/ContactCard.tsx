@@ -30,8 +30,10 @@ const ContactCard: React.FC<ContactCardProps> = ({
   onDelete,
   onViewHistory,
 }) => {
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const first = firstName?.charAt(0) || '';
+    const last = lastName?.charAt(0) || '';
+    return `${first}${last}`.toUpperCase() || '?';
   };
 
   return (
@@ -57,14 +59,14 @@ const ContactCard: React.FC<ContactCardProps> = ({
               mr: 2,
             }}
           >
-            {getInitials(contact.firstName, contact.lastName)}
+            {getInitials(contact?.firstName, contact?.lastName)}
           </Avatar>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold' }}>
-              {contact.firstName} {contact.lastName}
+              {contact?.firstName || 'Unknown'} {contact?.lastName || ''}
             </Typography>
             <Chip
-              label={contact.lastName.charAt(0).toUpperCase()}
+              label={(contact?.lastName?.charAt(0) || '?').toUpperCase()}
               size="small"
               color="primary"
               variant="outlined"

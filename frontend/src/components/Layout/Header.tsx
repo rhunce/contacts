@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({ showAuthButtons = false }) => {
               sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
               onClick={handleMenu}
             >
-              {user.firstName.charAt(0)}
+              {user?.firstName?.charAt(0) || 'U'}
             </Avatar>
             <Menu
               anchorEl={anchorEl}
@@ -86,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ showAuthButtons = false }) => {
               onClose={handleClose}
             >
               <MenuItem onClick={handleClose}>
-                {user.firstName} {user.lastName}
+                {user?.firstName || 'User'} {user?.lastName || ''}
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <Logout sx={{ mr: 1 }} />
