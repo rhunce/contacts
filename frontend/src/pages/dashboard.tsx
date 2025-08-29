@@ -128,7 +128,7 @@ const DashboardPage: React.FC = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress />
           </Box>
-        ) : !contacts || contacts.length === 0 ? (
+        ) : !contacts || contacts.length === 0 || contacts.every(contact => !contact) ? (
           <Box
             sx={{
               display: 'flex',
@@ -168,8 +168,8 @@ const DashboardPage: React.FC = () => {
             }}
           >
             <Grid container spacing={3}>
-              {contacts?.map((contact) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={contact?.id || Math.random()}>
+              {contacts?.filter(contact => contact && contact.id).map((contact) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={contact.id}>
                   <ContactCard
                     contact={contact}
                     onEdit={(contact) => {
