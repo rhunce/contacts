@@ -180,8 +180,6 @@ class BackendStack(Stack):
             f"{self.app_name}SessionSecret",
             secret_name=f"{self.app_name.lower()}-session-secret",
             generate_secret_string=secretsmanager.SecretStringGenerator(
-                secret_string_template='{"secret": "',
-                generate_string_key="value",
                 exclude_characters="\"@/\\"
             )
         )
