@@ -8,6 +8,7 @@ import {
   Button,
   Grid,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import { CreateContactRequest } from '@/types/contact';
 
@@ -98,6 +99,12 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
             disabled={loading}
             margin="normal"
           />
+          
+          {loading && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Creating contact... This may take up to 30 seconds due to server processing.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
