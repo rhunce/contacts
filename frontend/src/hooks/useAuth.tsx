@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       const response = await authService.login({ email, password });
-      if (response.status === 200 && response.data?.user) {
+      if (response.data?.user) {
         setUser(response.data.user);
       } else {
         throw new Error(response.errors?.[0]?.message || 'Login failed');
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
       const response = await authService.register({ email, password, firstName, lastName });
-      if (response.status === 200 && response.data?.user) {
+      if (response.data?.user) {
         setUser(response.data.user);
       } else {
         throw new Error(response.errors?.[0]?.message || 'Registration failed');

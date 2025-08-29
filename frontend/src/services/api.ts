@@ -41,11 +41,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Clear any stored auth data
       if (typeof window !== 'undefined') {
-        // Only redirect if we're in the browser and not already on login page
+        // Only redirect if we're in the browser and not already on login/register page
         const currentPath = window.location.pathname;
         if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
           window.location.href = '/login';
         }
+        // If we're already on login/register page, don't redirect - let the component handle the error
       }
     }
     
