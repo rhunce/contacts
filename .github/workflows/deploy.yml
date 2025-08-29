@@ -48,6 +48,14 @@ jobs:
       working-directory: ./infra
       run: pip install -r requirements.txt
 
+    - name: Setup Node.js for CDK
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install CDK CLI
+      run: npm install -g aws-cdk
+
     - name: CDK Bootstrap
       working-directory: ./infra
       run: cdk bootstrap aws://${{ env.CDK_DEFAULT_ACCOUNT }}/${{ env.CDK_DEFAULT_REGION }}
@@ -99,6 +107,14 @@ jobs:
     - name: Install Python dependencies
       working-directory: ./infra
       run: pip install -r requirements.txt
+
+    - name: Setup Node.js for CDK
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install CDK CLI
+      run: npm install -g aws-cdk
 
     - name: Deploy Frontend Infrastructure
       id: deploy-frontend
