@@ -18,6 +18,7 @@ export const contactService = {
 
   async getContact(id: string): Promise<Contact> {
     const response = await api.get(`/contact/${id}`);
+    console.log('API response for contact:', response.data);
     return response.data;
   },
 

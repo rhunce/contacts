@@ -48,6 +48,11 @@ const ContactHistoryPage: React.FC = () => {
         contactService.getContactHistory(contactId),
       ]);
       
+      console.log('Contact data received:', contactData);
+      console.log('Contact firstName:', contactData?.firstName);
+      console.log('Contact lastName:', contactData?.lastName);
+      console.log('Contact email:', contactData?.email);
+      console.log('Contact phone:', contactData?.phone);
       setContact(contactData);
       setHistory(historyData || []);
     } catch (error: any) {
@@ -105,34 +110,36 @@ const ContactHistoryPage: React.FC = () => {
           </Alert>
         ) : contact ? (
           <>
-            {/* Contact Info Card */}
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar
-                    sx={{
-                      width: 64,
-                      height: 64,
-                      bgcolor: 'primary.main',
-                      mr: 3,
-                    }}
-                  >
-                    {(contact?.firstName?.charAt(0) || '')}{(contact?.lastName?.charAt(0) || '')}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-                      {contact?.firstName || 'Unknown'} {contact?.lastName || ''}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {contact?.email || 'No email'}
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {contact?.phone || 'No phone'}
-                    </Typography>
+            {/* Contact Info Card - Only show if contact has valid data */}
+            {contact.firstName || contact.lastName || contact.email || contact.phone ? (
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 64,
+                        height: 64,
+                        bgcolor: 'primary.main',
+                        mr: 3,
+                      }}
+                    >
+                      {(contact?.firstName?.charAt(0) || '')}{(contact?.lastName?.charAt(0) || '')}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+                        {contact?.firstName || 'Unknown'} {contact?.lastName || ''}
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        {contact?.email || 'No email'}
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary">
+                        {contact?.phone || 'No phone'}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {/* History List */}
             <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
