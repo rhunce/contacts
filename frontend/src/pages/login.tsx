@@ -23,6 +23,8 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const router = useRouter();
 
+  console.log('LoginPage: Component rendered, current path:', router.pathname);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

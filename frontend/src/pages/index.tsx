@@ -9,6 +9,8 @@ const HomePage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
 
+  console.log('HomePage: Component rendered, current path:', router.pathname, 'user:', user);
+
   React.useEffect(() => {
     if (user) {
       router.push('/dashboard');
