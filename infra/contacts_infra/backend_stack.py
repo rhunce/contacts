@@ -129,7 +129,7 @@ class BackendStack(Stack):
                 ),
                 instance_type=ec2.InstanceType.of(
                     ec2.InstanceClass.T3, 
-                    ec2.InstanceSize.MICRO
+                    ec2.InstanceSize.SMALL
                 )
             ),
             instances=1,
