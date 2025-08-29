@@ -14,6 +14,10 @@ import authRoutes from './routes/auth';
 import contactRoutes from './routes/contacts';
 import contactHistoryRoutes from './routes/contactHistory';
 
+// SSE Event Manager
+import { SSEEventManager } from './services/sseEventManager';
+import { CustomSession } from './types';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -123,6 +127,19 @@ async function startServer() {
     app.use('/contact', contactRoutes);
     app.use('/contacts', contactRoutes);
     app.use('/contact-history', contactHistoryRoutes);
+
+    // 10) SSE endpoint for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    
+    app.get('/api/events', (req, res) => {
+      const session = req.session as CustomSession;
+      if (!session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      sseEventManager.addClient(session.userId, res);
+      return; // Explicit return for TypeScript
+    });
 
     // 10) 404 handler
     app.use('*', (req, res) => {

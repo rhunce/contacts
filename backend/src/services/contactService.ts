@@ -1,5 +1,6 @@
 import { ContactRepository } from '../repositories/contactRepository';
 import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
+import { SSEEventManager } from './sseEventManager';
 import { 
   InternalContactWithOwnerDto, 
   InternalCreateContactDto, 
@@ -74,7 +75,13 @@ export class ContactService {
     await new Promise(resolve => setTimeout(resolve, 20000));
 
     const internalContact = await this.contactRepository.create(internalData);
-    return ContactMapper.toContactWithOwnerDto(internalContact);
+    const externalContact = ContactMapper.toContactWithOwnerDto(internalContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactCreated(ownerId, externalContact);
+    
+    return externalContact;
   }
 
   async updateContact(id: string, ownerId: string, externalUpdateData: UpdateContactDto): Promise<ContactDto> {
@@ -131,7 +138,13 @@ export class ContactService {
       this.contactHistoryRepository.createWithTransaction(historyChanges)
     ]);
 
-    return ContactMapper.toContactWithOwnerDto(updatedContact);
+    const externalContact = ContactMapper.toContactWithOwnerDto(updatedContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactUpdated(ownerId, externalContact);
+    
+    return externalContact;
   }
 
   async deleteContact(id: string, ownerId: string): Promise<ContactDto> {
@@ -141,7 +154,13 @@ export class ContactService {
     }
 
     const deletedContact = await this.contactRepository.delete(id);
-    return ContactMapper.toContactWithOwnerDto(deletedContact);
+    const externalContact = ContactMapper.toContactWithOwnerDto(deletedContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactDeleted(ownerId, id);
+    
+    return externalContact;
   }
 
   private validateContactData(data: InternalCreateContactDto): ContactValidationResult {
