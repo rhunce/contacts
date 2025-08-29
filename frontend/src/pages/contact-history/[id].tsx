@@ -153,42 +153,57 @@ const ContactHistoryPage: React.FC = () => {
               </Card>
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {history.map((entry, index) => (
-                  <Card key={entry.id}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip
-                            label={entry.action}
-                            color={getActionColor(entry.action) as any}
-                            size="small"
-                          />
-                          <Typography variant="body2" color="text.secondary">
-                            {entry.fieldName}
+                {history.map((entry, index) => {
+                  // Get all changed fields for this entry
+                  const changedFields = [
+                    { field: 'firstName', change: entry.firstName },
+                    { field: 'lastName', change: entry.lastName },
+                    { field: 'email', change: entry.email },
+                    { field: 'phone', change: entry.phone }
+                  ].filter(item => item.change); // Only include fields that were changed
+
+                  return (
+                    <Card key={entry.id}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {formatDate(entry.createdAt)}
                           </Typography>
                         </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatDate(entry.createdAt)}
-                        </Typography>
-                      </Box>
-                      
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          From:
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
-                          {entry.oldValue || 'N/A'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          To:
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
-                          {entry.newValue || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
+                        
+                        {changedFields.map(({ field, change }) => (
+                          <Box key={field} sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <Chip
+                                label="Updated"
+                                color="primary"
+                                size="small"
+                              />
+                              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                                {field}
+                              </Typography>
+                            </Box>
+                            
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary">
+                                From:
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+                                {change?.before || 'N/A'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                To:
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'grey.100', px: 1, py: 0.5, borderRadius: 1 }}>
+                                {change?.after || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </Box>
             )}
           </>

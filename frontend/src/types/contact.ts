@@ -37,12 +37,17 @@ export interface ContactListResponse {
   errors: any[];
 }
 
+export interface ContactHistoryChange {
+  before: string;
+  after: string;
+}
+
 export interface ContactHistory {
   id: string;
-  contactId: string;
-  action: string;
-  fieldName: string;
-  oldValue: string;
-  newValue: string;
+  firstName?: ContactHistoryChange;
+  lastName?: ContactHistoryChange;
+  email?: ContactHistoryChange;
+  phone?: ContactHistoryChange;
   createdAt: string;
+  updatedAt: string;
 }

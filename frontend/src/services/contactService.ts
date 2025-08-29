@@ -39,6 +39,6 @@ export const contactService = {
 
   async getContactHistory(id: string): Promise<any[]> {
     const response = await api.get(`/contact-history/${id}`);
-    return response.data;
+    return response.data.data.items; // Extract items from paginated response
   },
 };
