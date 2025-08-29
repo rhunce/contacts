@@ -31,22 +31,50 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
     email: '',
     phone: '',
   });
+  const [error, setError] = useState<string>('');
 
   const handleChange = (field: keyof CreateContactRequest) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
-    setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+    setError('');
+    
+    try {
+      await onSubmit(formData);
+      setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error.response?.data?.errors) {
+        const emailError = error.response.data.errors.find((err: any) => err.field === 'email');
+        if (emailError) {
+          setError('You already have a contact with this email address');
+          return;
+        }
+      }
+      
+      // Handle timeout errors
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        setError('Request timed out. The server is processing your request, but it may take longer than expected. Please try again.');
+        return;
+      }
+      
+      // Handle other errors
+      setError(error.message || 'Failed to create contact. Please try again.');
+    }
   };
 
   const handleClose = () => {
     if (!loading) {
       setFormData({ firstName: '', lastName: '', email: '', phone: '' });
+      setError('');
       onClose();
     }
   };
@@ -99,6 +127,12 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
             disabled={loading}
             margin="normal"
           />
+          
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
           
           {loading && (
             <Alert severity="info" sx={{ mt: 2 }}>

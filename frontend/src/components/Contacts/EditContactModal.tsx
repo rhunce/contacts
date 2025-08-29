@@ -8,6 +8,7 @@ import {
   Button,
   Grid,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import { Contact, UpdateContactRequest } from '@/types/contact';
 
@@ -32,6 +33,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     email: '',
     phone: '',
   });
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     if (contact) {
@@ -41,6 +43,7 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
         email: contact.email,
         phone: contact.phone,
       });
+      setError('');
     }
   }, [contact]);
 
@@ -48,15 +51,36 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    setError('');
+    
+    try {
+      await onSubmit(formData);
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error.response?.data?.errors) {
+        const emailError = error.response.data.errors.find((err: any) => err.field === 'email');
+        if (emailError) {
+          setError('You already have a contact with this email address');
+          return;
+        }
+      }
+      
+      // Handle other errors
+      setError(error.message || 'Failed to update contact. Please try again.');
+    }
   };
 
   const handleClose = () => {
     if (!loading) {
+      setError('');
       onClose();
     }
   };
@@ -111,6 +135,12 @@ const EditContactModal: React.FC<EditContactModalProps> = ({
             disabled={loading}
             margin="normal"
           />
+          
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
