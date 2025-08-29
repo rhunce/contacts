@@ -144,7 +144,6 @@ class BackendStack(Stack):
             deletion_protection=False,
             removal_policy=RemovalPolicy.DESTROY,
             credentials=rds.Credentials.from_generated_secret("postgres"),
-            database_name=self.app_name.lower(),
         )
 
     
@@ -209,6 +208,7 @@ class BackendStack(Stack):
             "CORS_ORIGIN": os.getenv("CORS_ORIGIN", f"https://{self.root_domain}" if self.root_domain else ""),
             "MAX_USERS": os.getenv("MAX_USERS", "50"),
             "MAX_CONTACTS_PER_USER": os.getenv("MAX_CONTACTS_PER_USER", "50"),
+            "PGDATABASE": "postgres",  # Aurora PostgreSQL default database
         }
 
         secrets = {
@@ -216,7 +216,6 @@ class BackendStack(Stack):
             "PGPORT": ecs.Secret.from_secrets_manager(db_cluster.secret, "port"),
             "PGUSER": ecs.Secret.from_secrets_manager(db_cluster.secret, "username"),
             "PGPASSWORD": ecs.Secret.from_secrets_manager(db_cluster.secret, "password"),
-            "PGDATABASE": ecs.Secret.from_secrets_manager(db_cluster.secret, "database"),
             "SESSION_SECRET": ecs.Secret.from_secrets_manager(session_secret),
             "REDIS_URL": ecs.Secret.from_secrets_manager(
                 secretsmanager.Secret(
