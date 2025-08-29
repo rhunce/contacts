@@ -48,11 +48,25 @@ const DashboardPage: React.FC = () => {
 
   const handleAddContact = async (contactData: any) => {
     try {
+      // Show initial toast about the delay
+      toast.loading('Creating contact... This may take up to 30 seconds.', { duration: 25000 });
+      
       await createContact(contactData);
       setShowAddModal(false);
+      
+      // Dismiss the loading toast and show success
+      toast.dismiss();
       toast.success('Contact created successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create contact');
+      // Dismiss the loading toast and show error
+      toast.dismiss();
+      
+      // Handle timeout errors specifically
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error('Request timed out. The server is processing your request, but it may take longer than expected. Please try again.');
+      } else {
+        toast.error(error.message || 'Failed to create contact');
+      }
     }
   };
 

@@ -22,7 +22,9 @@ export const contactService = {
   },
 
   async createContact(contactData: CreateContactRequest): Promise<Contact> {
-    const response = await api.post('/contact', contactData);
+    const response = await api.post('/contact', contactData, {
+      timeout: 30000, // 30 second timeout for contact creation (20s delay + buffer)
+    });
     return response.data;
   },
 
