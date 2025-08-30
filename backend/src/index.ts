@@ -13,6 +13,8 @@ import { responseInterceptor } from './middleware/responseInterceptor';
 import authRoutes from './routes/auth';
 import contactRoutes from './routes/contacts';
 import contactHistoryRoutes from './routes/contactHistory';
+import apiKeyRoutes from './routes/apiKeys';
+import externalContactRoutes from './routes/externalContacts';
 
 // SSE Event Manager
 import { SSEEventManager } from './services/sseEventManager';
@@ -127,6 +129,8 @@ async function startServer() {
     app.use('/contact', contactRoutes);
     app.use('/contacts', contactRoutes);
     app.use('/contact-history', contactHistoryRoutes);
+    app.use('/api/keys', apiKeyRoutes);
+    app.use('/api/external/contact', externalContactRoutes);
 
     // 10) SSE endpoint for real-time updates
     const sseEventManager = SSEEventManager.getInstance();

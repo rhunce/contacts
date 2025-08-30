@@ -18,6 +18,7 @@ model User {
   email     String    @unique
   password  String
   contacts  Contact[]
+  apiKeys   ApiKey[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -25,17 +26,18 @@ model User {
 }
 
 model Contact {
-  id        String           @id @default(uuid())
-  ownerId   String
-  firstName String
-  lastName  String
-  email     String
-  phone     String
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id         String           @id @default(uuid())
+  ownerId    String
+  firstName  String
+  lastName   String
+  email      String
+  phone      String
+  externalId String?          @unique // External system identifier
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
   
-  owner     User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  history   ContactHistory[]
+  owner      User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  history    ContactHistory[]
 
   @@unique([ownerId, email])
   @@map("contacts")
@@ -53,4 +55,21 @@ model ContactHistory {
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@map("contact_history")
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String   // Human-readable name for the API key
+  keyHash     String   // Hashed API key
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@map("api_keys")
 }

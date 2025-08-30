@@ -56,6 +56,11 @@ export class ContactService {
     return internalContact ? ContactMapper.toContactWithOwnerDto(internalContact) : null;
   }
 
+  async getContactByExternalId(externalId: string, ownerId: string): Promise<ContactDto | null> {
+    const internalContact = await this.contactRepository.findByExternalId(externalId, ownerId);
+    return internalContact ? ContactMapper.toContactWithOwnerDto(internalContact) : null;
+  }
+
   async createContact(externalData: CreateContactDto, ownerId: string): Promise<ContactDto> {
     // Transform external DTO to internal DTO
     const internalData = ContactMapper.toInternalCreateDto(externalData, ownerId);
@@ -76,13 +81,57 @@ export class ContactService {
 
     // Check contact limit (configurable via environment variable)
     const maxContacts = parseInt(process.env.MAX_CONTACTS_PER_USER || '50');
-    const contactCount = await this.contactRepository.getContactCountByOwner(ownerId);
+    const contactCount = await this.contactRepository.getContactCount(ownerId);
     if (contactCount >= maxContacts) {
       throw AppErrorClass.contactLimitReached(maxContacts);
     }
 
     // Simulate 20-second delay as requested
     await new Promise(resolve => setTimeout(resolve, 20000));
+
+    const internalContact = await this.contactRepository.create(internalData);
+    const externalContact = ContactMapper.toContactWithOwnerDto(internalContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactCreated(ownerId, externalContact);
+    
+    return externalContact;
+  }
+
+  async createContactWithExternalId(externalData: CreateContactDto & { externalId?: string }, ownerId: string): Promise<ContactDto> {
+    // Transform external DTO to internal DTO
+    const internalData = ContactMapper.toInternalCreateDto(externalData, ownerId);
+    
+    // Add external ID if provided
+    if (externalData.externalId) {
+      // Check if external ID already exists globally
+      const existingContact = await this.contactRepository.findByExternalIdGlobal(externalData.externalId);
+      if (existingContact) {
+        throw AppErrorClass.validationError('Contact with this external ID already exists', 'externalId');
+      }
+      internalData.externalId = externalData.externalId;
+    }
+    
+    // Validate contact data
+    const validation = this.validateContactData(internalData);
+    if (!validation.isValid) {
+      const firstError = validation.errors[0];
+      throw AppErrorClass.validationError(firstError.message, firstError.field);
+    }
+
+    // Check if contact with same email already exists for this owner
+    const exists = await this.contactRepository.existsByEmailAndOwner(internalData.email, internalData.ownerId);
+    if (exists) {
+      throw AppErrorClass.duplicateEmail();
+    }
+
+    // Check contact limit
+    const maxContacts = parseInt(process.env.MAX_CONTACTS_PER_USER || '50');
+    const contactCount = await this.contactRepository.getContactCount(ownerId);
+    if (contactCount >= maxContacts) {
+      throw AppErrorClass.contactLimitReached(maxContacts);
+    }
 
     const internalContact = await this.contactRepository.create(internalData);
     const externalContact = ContactMapper.toContactWithOwnerDto(internalContact);
@@ -143,7 +192,7 @@ export class ContactService {
 
     // Check for email conflicts if email is being updated
     if (finalUpdateData.email) {
-      const exists = await this.contactRepository.existsByEmailAndOwner(finalUpdateData.email, ownerId);
+      const exists = await this.contactRepository.existsByEmailAndOwner(finalUpdateData.email, ownerId, id);
       if (exists) {
         throw AppErrorClass.duplicateEmail();
       }
@@ -152,6 +201,76 @@ export class ContactService {
     // Update contact and create history in a transaction
     const [updatedContact] = await Promise.all([
       this.contactRepository.update(id, finalUpdateData),
+      this.contactHistoryRepository.createWithTransaction(historyChanges)
+    ]);
+
+    const externalContact = ContactMapper.toContactWithOwnerDto(updatedContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactUpdated(ownerId, externalContact);
+    
+    return externalContact;
+  }
+
+  async updateContactByExternalId(externalId: string, ownerId: string, externalUpdateData: UpdateContactDto): Promise<ContactDto> {
+    // Get current contact by external ID
+    const currentContact = await this.contactRepository.findByExternalIdForUpdate(externalId, ownerId);
+    if (!currentContact) {
+      throw AppErrorClass.notFound('Contact not found');
+    }
+
+    // Transform external DTO to internal DTO
+    const internalUpdateData = ContactMapper.toInternalUpdateDto(externalUpdateData);
+
+    // Prepare update data and history changes
+    const finalUpdateData: InternalUpdateContactDto = {};
+    const historyChanges: InternalCreateContactHistoryDto = {
+      contactId: currentContact.id
+    };
+
+    if (internalUpdateData.firstName && internalUpdateData.firstName !== currentContact.firstName) {
+      finalUpdateData.firstName = internalUpdateData.firstName;
+      historyChanges.firstName = { before: currentContact.firstName, after: internalUpdateData.firstName };
+    }
+
+    if (internalUpdateData.lastName && internalUpdateData.lastName !== currentContact.lastName) {
+      finalUpdateData.lastName = internalUpdateData.lastName;
+      historyChanges.lastName = { before: currentContact.lastName, after: internalUpdateData.lastName };
+    }
+
+    if (internalUpdateData.email && internalUpdateData.email !== currentContact.email) {
+      // Validate email format if it's being updated
+      if (!this.isValidEmail(internalUpdateData.email)) {
+        throw AppErrorClass.validationError(
+          'Please enter a valid email address (e.g., john.doe@example.com)', 
+          'email'
+        );
+      }
+      finalUpdateData.email = internalUpdateData.email;
+      historyChanges.email = { before: currentContact.email, after: internalUpdateData.email };
+    }
+
+    if (internalUpdateData.phone && internalUpdateData.phone !== currentContact.phone) {
+      finalUpdateData.phone = internalUpdateData.phone;
+      historyChanges.phone = { before: currentContact.phone, after: internalUpdateData.phone };
+    }
+
+    if (Object.keys(finalUpdateData).length === 0) {
+      throw AppErrorClass.validationError('No changes provided');
+    }
+
+    // Check for email conflicts if email is being updated
+    if (finalUpdateData.email) {
+      const exists = await this.contactRepository.existsByEmailAndOwner(finalUpdateData.email, ownerId, currentContact.id);
+      if (exists) {
+        throw AppErrorClass.duplicateEmail();
+      }
+    }
+
+    // Update contact and create history in a transaction
+    const [updatedContact] = await Promise.all([
+      this.contactRepository.updateByExternalId(externalId, ownerId, finalUpdateData),
       this.contactHistoryRepository.createWithTransaction(historyChanges)
     ]);
 
@@ -176,6 +295,22 @@ export class ContactService {
     // Emit SSE event for real-time updates
     const sseEventManager = SSEEventManager.getInstance();
     sseEventManager.emitContactDeleted(ownerId, id);
+    
+    return externalContact;
+  }
+
+  async deleteContactByExternalId(externalId: string, ownerId: string): Promise<ContactDto> {
+    const contact = await this.contactRepository.findByExternalId(externalId, ownerId);
+    if (!contact) {
+      throw AppErrorClass.notFound('Contact not found');
+    }
+
+    const deletedContact = await this.contactRepository.deleteByExternalId(externalId, ownerId);
+    const externalContact = ContactMapper.toContactWithOwnerDto(deletedContact);
+    
+    // Emit SSE event for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    sseEventManager.emitContactDeleted(ownerId, contact.id);
     
     return externalContact;
   }

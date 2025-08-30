@@ -32,6 +32,49 @@ export class ContactRepository {
     });
   }
 
+  async findByExternalId(externalId: string, ownerId: string): Promise<InternalContactWithOwnerDto | null> {
+    return prisma.contact.findFirst({
+      where: {
+        externalId,
+        ownerId
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true, // Include password for internal use
+            createdAt: true,
+            updatedAt: true
+          }
+        }
+      }
+    });
+  }
+
+  async findByExternalIdGlobal(externalId: string): Promise<InternalContactWithOwnerDto | null> {
+    return prisma.contact.findUnique({
+      where: {
+        externalId
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true, // Include password for internal use
+            createdAt: true,
+            updatedAt: true
+          }
+        }
+      }
+    });
+  }
+
   async findByOwnerId(ownerId: string, options: PaginationOptionsDto, filter?: string): Promise<PaginationResultDto<InternalContactWithOwnerDto>> {
     // Build where clause with optional filter
     const whereClause: any = { ownerId };
@@ -123,6 +166,29 @@ export class ContactRepository {
     });
   }
 
+  async updateByExternalId(externalId: string, ownerId: string, data: InternalUpdateContactDto): Promise<InternalContactWithOwnerDto> {
+    return prisma.contact.update({
+      where: {
+        externalId,
+        ownerId
+      },
+      data,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true, // Include password for internal use
+            createdAt: true,
+            updatedAt: true
+          }
+        }
+      }
+    });
+  }
+
   async delete(id: string): Promise<InternalContactWithOwnerDto> {
     return prisma.contact.delete({
       where: { id },
@@ -142,13 +208,50 @@ export class ContactRepository {
     });
   }
 
-  async existsByEmailAndOwner(email: string, ownerId: string): Promise<boolean> {
-    const count = await prisma.contact.count({
+  async deleteByExternalId(externalId: string, ownerId: string): Promise<InternalContactWithOwnerDto> {
+    return prisma.contact.delete({
       where: {
-        email,
+        externalId,
         ownerId
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            password: true, // Include password for internal use
+            createdAt: true,
+            updatedAt: true
+          }
+        }
       }
     });
+  }
+
+  async existsByEmailAndOwner(email: string, ownerId: string, excludeId?: string): Promise<boolean> {
+    const whereClause: any = {
+      email,
+      ownerId
+    };
+
+    if (excludeId) {
+      whereClause.id = { not: excludeId };
+    }
+
+    const count = await prisma.contact.count({
+      where: whereClause
+    });
+
+    return count > 0;
+  }
+
+  async existsByExternalId(externalId: string): Promise<boolean> {
+    const count = await prisma.contact.count({
+      where: { externalId }
+    });
+
     return count > 0;
   }
 
@@ -161,7 +264,16 @@ export class ContactRepository {
     });
   }
 
-  async getContactCountByOwner(ownerId: string): Promise<number> {
+  async findByExternalIdForUpdate(externalId: string, ownerId: string): Promise<InternalContactDto | null> {
+    return prisma.contact.findFirst({
+      where: {
+        externalId,
+        ownerId
+      }
+    });
+  }
+
+  async getContactCount(ownerId: string): Promise<number> {
     return prisma.contact.count({
       where: { ownerId }
     });

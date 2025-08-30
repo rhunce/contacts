@@ -34,6 +34,7 @@ export interface InternalCreateContactDto {
   lastName: string;
   email: string;
   phone: string;
+  externalId?: string;
 }
 
 export interface InternalUpdateContactDto {

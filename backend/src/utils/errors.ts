@@ -49,4 +49,11 @@ export class AppErrorClass extends Error {
       message: 'Request timed out. The server is processing your request, but it may take longer than expected. Please try again.'
     });
   }
+
+  static notFound(message: string = 'Resource not found'): AppErrorClass {
+    return new AppErrorClass({
+      type: ErrorType.NOT_FOUND,
+      message
+    });
+  }
 }
