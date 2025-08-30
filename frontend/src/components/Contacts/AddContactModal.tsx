@@ -52,8 +52,10 @@ const AddContactModal: React.FC<AddContactModalProps> = ({
       await onSubmit(formData);
       setFormData({ firstName: '', lastName: '', email: '', phone: '' });
     } catch (error: any) {
-      // Use structured error handling
-      setError(getErrorMessage(error));
+      console.log('AddContactModal: Error caught:', error);
+      const errorMessage = getErrorMessage(error);
+      console.log('AddContactModal: Error message:', errorMessage);
+      setError(errorMessage);
     }
   };
 

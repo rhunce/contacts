@@ -31,7 +31,9 @@ export function getErrorType(error: any): ErrorType | null {
 }
 
 export function getErrorMessage(error: any): string {
+  console.log('getErrorMessage called with:', error);
   const errorType = getErrorType(error);
+  console.log('Error type detected:', errorType);
   
   switch (errorType) {
     case ErrorType.USER_LIMIT_REACHED:
@@ -49,9 +51,13 @@ export function getErrorMessage(error: any): string {
     case ErrorType.VALIDATION_ERROR:
       // Check for structured error response from backend
       if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
-        return error.response.data.errors[0].message;
+        const message = error.response.data.errors[0].message;
+        console.log('Validation error message from backend:', message);
+        return message;
       }
-      return error?.response?.data?.message || error?.message || 'Validation error occurred.';
+      const fallbackMessage = error?.response?.data?.message || error?.message || 'Validation error occurred.';
+      console.log('Using fallback validation message:', fallbackMessage);
+      return fallbackMessage;
     
     case ErrorType.UNAUTHORIZED:
       return 'You are not authorized to perform this action.';
@@ -62,6 +68,7 @@ export function getErrorMessage(error: any): string {
     default:
       // For unstructured errors, try to get a meaningful message
       const message = error?.response?.data?.message || error?.message;
+      console.log('Default error message:', message);
       if (message) {
         return message;
       }
