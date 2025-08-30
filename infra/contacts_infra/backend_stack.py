@@ -189,8 +189,7 @@ class BackendStack(Stack):
             secret_name=f"{self.app_name.lower()}-session-secret",
             generate_secret_string=secretsmanager.SecretStringGenerator(
                 exclude_characters="\"@/\\"
-            ),
-            rotation_schedule=secretsmanager.RotationSchedule.daily()
+            )
         )
     
     def _create_fargate_service(
