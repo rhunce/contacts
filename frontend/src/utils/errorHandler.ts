@@ -7,6 +7,11 @@ export function getErrorType(error: any): ErrorType | null {
     return error.response.data.type as ErrorType;
   }
   
+  // Check if it's in the errors array (our backend structure)
+  if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
+    return error.response.data.errors[0].type as ErrorType;
+  }
+  
   // Check if it's an AppError instance
   if (error?.type) {
     return error.type as ErrorType;
@@ -18,7 +23,7 @@ export function getErrorType(error: any): ErrorType | null {
   }
   
   // Log unstructured errors for debugging
-  if (error && !error?.response?.data?.type && !error?.type && error?.code !== 'ECONNABORTED') {
+  if (error && !error?.response?.data?.type && !error?.response?.data?.errors && !error?.type && error?.code !== 'ECONNABORTED') {
     console.warn('Unstructured error detected:', {
       error,
       message: error?.message,
