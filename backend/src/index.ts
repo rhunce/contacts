@@ -74,13 +74,44 @@ app.get('/health', (req, res) => {
   res.success({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 8) Start the server with proper session configuration, then mount routes
+// 8) Mount API routes (always available for testing)
+app.use('/', authRoutes);
+app.use('/contact', contactRoutes);
+app.use('/contacts', contactRoutes);
+app.use('/contact-history', contactHistoryRoutes);
+app.use('/api/keys', apiKeyRoutes);
+app.use('/api/external/contact', externalContactRoutes);
+
+// 9) SSE endpoint for real-time updates
+const sseEventManager = SSEEventManager.getInstance();
+
+app.get('/api/events', (req, res) => {
+  const session = req.session as CustomSession;
+  if (!session.userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  sseEventManager.addClient(session.userId, res);
+  return; // Explicit return for TypeScript
+});
+
+// 10) 404 handler
+app.use('*', (req, res) => {
+  res.notFound('Route not found');
+});
+
+// 11) Error handler
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.error('Internal server error');
+});
+
+// 12) Start the server with proper session configuration (only in non-test environments)
 async function startServer() {
   try {
-    // Ensure DB is migrated/seeded as your helper dictates (only in non-test environments)
-    if (process.env.NODE_ENV !== 'test') {
-      await initializeDatabase();
-    }
+    // Ensure DB is migrated/seeded as your helper dictates
+    await initializeDatabase();
 
     // --- Build session options once ---
     const baseSessionOptions: session.SessionOptions = {
@@ -126,40 +157,7 @@ async function startServer() {
       app.use(session(baseSessionOptions));
     }
 
-    // 9) Mount API routes AFTER session middleware so req.session is available
-    app.use('/', authRoutes);
-    app.use('/contact', contactRoutes);
-    app.use('/contacts', contactRoutes);
-    app.use('/contact-history', contactHistoryRoutes);
-    app.use('/api/keys', apiKeyRoutes);
-    app.use('/api/external/contact', externalContactRoutes);
-
-    // 10) SSE endpoint for real-time updates
-    const sseEventManager = SSEEventManager.getInstance();
-    
-    app.get('/api/events', (req, res) => {
-      const session = req.session as CustomSession;
-      if (!session.userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      sseEventManager.addClient(session.userId, res);
-      return; // Explicit return for TypeScript
-    });
-
-    // 10) 404 handler
-    app.use('*', (req, res) => {
-      res.notFound('Route not found');
-    });
-
-    // 11) Error handler
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      console.error('Unhandled error:', err);
-      res.error('Internal server error');
-    });
-
-    // 12) Start server
+    // Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${NODE_ENV}`);
