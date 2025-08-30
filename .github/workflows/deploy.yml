@@ -20,8 +20,101 @@ env:
   MAX_CONTACTS_PER_USER: ${{ vars.MAX_CONTACTS_PER_USER }}
 
 jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: test_contacts
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Setup Prisma
+      working-directory: ./backend
+      run: |
+        export DATABASE_URL="postgresql://postgres:testpassword@localhost:5432/test_contacts"
+        export TEST_DATABASE_URL="postgresql://postgres:testpassword@localhost:5432/test_contacts"
+        npx prisma generate
+        npx prisma migrate deploy
+
+    - name: Run backend tests
+      working-directory: ./backend
+      run: |
+        export DATABASE_URL="postgresql://postgres:testpassword@localhost:5432/test_contacts"
+        export TEST_DATABASE_URL="postgresql://postgres:testpassword@localhost:5432/test_contacts"
+        npm run test
+
+    - name: Upload backend coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm run test
+
+    - name: Upload frontend coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./frontend/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  test-combined:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    steps:
+    - name: Test Summary
+      run: |
+        echo "✅ All tests passed!"
+        echo "🧪 Backend tests completed successfully"
+        echo "🧪 Frontend tests completed successfully"
+        echo "🚀 Ready for deployment"
+
   deploy-backend:
     runs-on: ubuntu-latest
+    needs: [test-combined]
     outputs:
       alb-url: ${{ steps.deploy.outputs.alb-url }}
       api-url: ${{ steps.deploy.outputs.api-url }}
