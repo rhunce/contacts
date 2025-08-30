@@ -5,11 +5,6 @@ export interface ApiKey {
   lastUsedAt?: Date;
   expiresAt?: Date;
   createdAt: Date;
-  usageStats?: {
-    totalRequests: number;
-    monthlyRequests: number;
-    dailyRequests: number;
-  };
 }
 
 export interface CreateApiKeyRequest {
@@ -26,11 +21,4 @@ export interface CreateApiKeyRequest {
 export interface ApiKeyResponse {
   apiKey: string;
   info: ApiKey;
-}
-
-export interface ApiKeyUsageStats {
-  totalRequests: number;
-  monthlyRequests: number;
-  dailyRequests: number;
-  lastUsedAt?: Date;
 }

@@ -90,19 +90,4 @@ router.delete('/:id/permanent', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
-// GET /api/keys/:id/usage - Get API key usage statistics
-router.get('/:id/usage', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const session = req.session as CustomSession;
-    const userId = session.userId!;
-    const { id } = req.params;
-
-    const usageStats = await apiKeyService.getApiKeyUsage(userId, id);
-    res.success(usageStats);
-  } catch (error: any) {
-    console.error('Error fetching API key usage:', error);
-    res.appError(error);
-  }
-});
-
 export default router;

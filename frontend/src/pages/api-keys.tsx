@@ -1,4 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Card,
+  CardContent,
+  Grid,
+  CircularProgress,
+  Alert,
+  Chip,
+} from '@mui/material';
+import { Add, VpnKey, CheckCircle, Warning, Search } from '@mui/icons-material';
 import { useAuth } from '@/hooks/useAuth';
 import { apiKeyService } from '@/services/apiKeyService';
 import { ApiKey } from '@/types/apiKey';
@@ -108,140 +125,170 @@ const ApiKeysPage: React.FC = () => {
   if (!user) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h1>
-            <p className="text-gray-600">Please log in to manage your API keys.</p>
-          </div>
-        </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h5" component="h1" gutterBottom>
+              Authentication Required
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Please log in to manage your API keys.
+            </Typography>
+          </Box>
+        </Box>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 4 }}>
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">API Keys</h1>
-              <p className="mt-2 text-gray-600">
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+                API Keys
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 Manage your API keys for external integrations
-              </p>
-            </div>
-            <button
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              sx={{ px: 3 }}
             >
               Create New Key
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Box>
+        </Box>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Keys</p>
-                <p className="text-2xl font-bold text-gray-900">{apiKeys.length}</p>
-              </div>
-            </div>
-          </div>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ p: 1, bgcolor: 'primary.100', borderRadius: 1, mr: 2 }}>
+                    <VpnKey sx={{ color: 'primary.main', fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Keys
+                    </Typography>
+                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+                      {apiKeys.length}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Keys</p>
-                <p className="text-2xl font-bold text-gray-900">{activeKeys.length}</p>
-              </div>
-            </div>
-          </div>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ p: 1, bgcolor: 'success.100', borderRadius: 1, mr: 2 }}>
+                    <CheckCircle sx={{ color: 'success.main', fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Active Keys
+                    </Typography>
+                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+                      {activeKeys.length}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Revoked Keys</p>
-                <p className="text-2xl font-bold text-gray-900">{revokedKeys.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ p: 1, bgcolor: 'warning.100', borderRadius: 1, mr: 2 }}>
+                    <Warning sx={{ color: 'warning.main', fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Revoked Keys
+                    </Typography>
+                    <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+                      {revokedKeys.length}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search API keys..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Keys</option>
-                <option value="active">Active Only</option>
-                <option value="revoked">Revoked Only</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  fullWidth
+                  placeholder="Search API keys..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    label="Status"
+                    onChange={(e) => setFilterStatus(e.target.value as any)}
+                  >
+                    <MenuItem value="all">All Keys</MenuItem>
+                    <MenuItem value="active">Active Only</MenuItem>
+                    <MenuItem value="revoked">Revoked Only</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
 
         {/* API Keys List */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
         ) : filteredApiKeys.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto h-12 w-12 text-gray-400">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-            </div>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No API keys found</h3>
-            <p className="mt-1 text-sm text-gray-500">
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <VpnKey sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              No API keys found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {searchTerm || filterStatus !== 'all' 
                 ? 'Try adjusting your search or filter criteria.'
                 : 'Get started by creating your first API key.'
               }
-            </p>
+            </Typography>
             {!searchTerm && filterStatus === 'all' && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Create API Key
-                </button>
-              </div>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => setShowCreateModal(true)}
+              >
+                Create API Key
+              </Button>
             )}
-          </div>
+          </Box>
         ) : (
-          <div className="space-y-4">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {filteredApiKeys.map((apiKey) => (
               <ApiKeyCard
                 key={apiKey.id}
@@ -251,7 +298,7 @@ const ApiKeysPage: React.FC = () => {
                 onRestore={handleRestoreApiKey}
               />
             ))}
-          </div>
+          </Box>
         )}
 
         {/* Create API Key Modal */}
@@ -261,7 +308,7 @@ const ApiKeysPage: React.FC = () => {
             onSubmit={handleCreateApiKey}
           />
         )}
-      </div>
+      </Box>
     </Layout>
   );
 };
