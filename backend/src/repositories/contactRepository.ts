@@ -1,13 +1,11 @@
-import { prisma } from '../lib/prisma';
-import { 
+import {
   InternalContactDto,
-  InternalContactWithOwnerDto, 
-  InternalCreateContactDto, 
-  InternalUpdateContactDto,
-  InternalContactHistoryDto,
-  InternalContactHistoryWithContactDto
+  InternalContactWithOwnerDto,
+  InternalCreateContactDto,
+  InternalUpdateContactDto
 } from '../dtos/internal/contact.dto';
 import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
+import { prisma } from '../lib/prisma';
 
 export class ContactRepository {
   async findById(id: string, ownerId: string): Promise<InternalContactWithOwnerDto | null> {
@@ -33,28 +31,6 @@ export class ContactRepository {
   }
 
   async findByExternalId(externalId: string, ownerId: string): Promise<InternalContactWithOwnerDto | null> {
-    return prisma.contact.findFirst({
-      where: {
-        externalId,
-        ownerId
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            password: true, // Include password for internal use
-            createdAt: true,
-            updatedAt: true
-          }
-        }
-      }
-    });
-  }
-
-  async findByExternalIdGlobal(externalId: string): Promise<InternalContactWithOwnerDto | null> {
     return prisma.contact.findUnique({
       where: {
         externalId
@@ -73,6 +49,32 @@ export class ContactRepository {
         }
       }
     });
+  }
+
+  async existsByExternalIdAndOwner(externalId: string, ownerId: string): Promise<boolean> {
+    const contact = await prisma.contact.findUnique({
+      where: {
+        externalId
+      },
+      select: {
+        ownerId: true // Only select ownerId to verify ownership
+      }
+    });
+    
+    return contact?.ownerId === ownerId;
+  }
+
+  async existsByExternalId(externalId: string): Promise<boolean> {
+    const contact = await prisma.contact.findUnique({
+      where: {
+        externalId
+      },
+      select: {
+        id: true // Only select ID for existence check
+      }
+    });
+    
+    return contact !== null;
   }
 
   async findByOwnerId(ownerId: string, options: PaginationOptionsDto, filter?: string): Promise<PaginationResultDto<InternalContactWithOwnerDto>> {
@@ -242,14 +244,6 @@ export class ContactRepository {
 
     const count = await prisma.contact.count({
       where: whereClause
-    });
-
-    return count > 0;
-  }
-
-  async existsByExternalId(externalId: string): Promise<boolean> {
-    const count = await prisma.contact.count({
-      where: { externalId }
     });
 
     return count > 0;

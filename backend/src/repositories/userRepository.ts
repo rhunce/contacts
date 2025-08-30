@@ -1,10 +1,9 @@
-import { prisma } from '../lib/prisma';
-import { 
-  InternalUserDto, 
-  InternalUserWithContactsDto, 
-  InternalCreateUserDto, 
-  InternalUpdateUserDto 
+import {
+  InternalCreateUserDto,
+  InternalUpdateUserDto,
+  InternalUserDto
 } from '../dtos/internal/user.dto';
+import { prisma } from '../lib/prisma';
 
 export class UserRepository {
   async findByEmail(email: string): Promise<InternalUserDto | null> {
@@ -16,25 +15,6 @@ export class UserRepository {
   async findById(id: string): Promise<InternalUserDto | null> {
     return prisma.user.findUnique({
       where: { id }
-    });
-  }
-
-  async findByIdWithContacts(id: string): Promise<InternalUserWithContactsDto | null> {
-    return prisma.user.findUnique({
-      where: { id },
-      include: {
-        contacts: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true,
-            createdAt: true,
-            updatedAt: true
-          }
-        }
-      }
     });
   }
 
@@ -55,13 +35,6 @@ export class UserRepository {
     return prisma.user.delete({
       where: { id }
     });
-  }
-
-  async exists(email: string): Promise<boolean> {
-    const count = await prisma.user.count({
-      where: { email }
-    });
-    return count > 0;
   }
 
   async getUserCount(): Promise<number> {

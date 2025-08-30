@@ -1,8 +1,8 @@
-import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
-import { ContactRepository } from '../repositories/contactRepository';
-import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
 import { ContactHistoryDto } from '../dtos/external/contact.dto';
 import { ContactMapper } from '../dtos/mappers/contact.mapper';
+import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
+import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
+import { ContactRepository } from '../repositories/contactRepository';
 
 export class ContactHistoryService {
   private contactHistoryRepository: ContactHistoryRepository;

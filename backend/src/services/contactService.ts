@@ -1,22 +1,20 @@
-import { ContactRepository } from '../repositories/contactRepository';
-import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
-import { SSEEventManager } from './sseEventManager';
-import { AppErrorClass } from '../utils/errors';
-import { 
-  InternalContactWithOwnerDto, 
-  InternalCreateContactDto, 
-  InternalUpdateContactDto,
-  InternalCreateContactHistoryDto
-} from '../dtos/internal/contact.dto';
-import { 
-  ContactDto, 
-  CreateContactDto, 
+import {
+  ContactDto,
+  CreateContactDto,
   UpdateContactDto
 } from '../dtos/external/contact.dto';
-import { PaginationResultDto } from '../dtos/shared/pagination.dto';
-import { PaginationOptionsDto } from '../dtos/shared/pagination.dto';
+import {
+  InternalCreateContactDto,
+  InternalCreateContactHistoryDto,
+  InternalUpdateContactDto
+} from '../dtos/internal/contact.dto';
 import { ContactMapper } from '../dtos/mappers/contact.mapper';
 import { ValidationErrorDto } from '../dtos/shared/common.dto';
+import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
+import { ContactHistoryRepository } from '../repositories/contactHistoryRepository';
+import { ContactRepository } from '../repositories/contactRepository';
+import { AppErrorClass } from '../utils/errors';
+import { SSEEventManager } from './sseEventManager';
 
 export interface ContactValidationResult {
   isValid: boolean;
@@ -106,8 +104,8 @@ export class ContactService {
     // Add external ID if provided
     if (externalData.externalId) {
       // Check if external ID already exists globally
-      const existingContact = await this.contactRepository.findByExternalIdGlobal(externalData.externalId);
-      if (existingContact) {
+      const externalIdExists = await this.contactRepository.existsByExternalId(externalData.externalId);
+      if (externalIdExists) {
         throw AppErrorClass.validationError('Contact with this external ID already exists', 'externalId');
       }
       internalData.externalId = externalData.externalId;
@@ -198,10 +196,10 @@ export class ContactService {
       }
     }
 
-    // Update contact and create history in a transaction
+    // Update contact and create history
     const [updatedContact] = await Promise.all([
       this.contactRepository.update(id, finalUpdateData),
-      this.contactHistoryRepository.createWithTransaction(historyChanges)
+      this.contactHistoryRepository.create(historyChanges)
     ]);
 
     const externalContact = ContactMapper.toContactWithOwnerDto(updatedContact);
@@ -268,10 +266,10 @@ export class ContactService {
       }
     }
 
-    // Update contact and create history in a transaction
+    // Update contact and create history
     const [updatedContact] = await Promise.all([
       this.contactRepository.updateByExternalId(externalId, ownerId, finalUpdateData),
-      this.contactHistoryRepository.createWithTransaction(historyChanges)
+      this.contactHistoryRepository.create(historyChanges)
     ]);
 
     const externalContact = ContactMapper.toContactWithOwnerDto(updatedContact);
@@ -300,8 +298,9 @@ export class ContactService {
   }
 
   async deleteContactByExternalId(externalId: string, ownerId: string): Promise<ContactDto> {
-    const contact = await this.contactRepository.findByExternalId(externalId, ownerId);
-    if (!contact) {
+    // Verify the contact exists and belongs to the user (optimized)
+    const contactExists = await this.contactRepository.existsByExternalIdAndOwner(externalId, ownerId);
+    if (!contactExists) {
       throw AppErrorClass.notFound('Contact not found');
     }
 
@@ -310,7 +309,7 @@ export class ContactService {
     
     // Emit SSE event for real-time updates
     const sseEventManager = SSEEventManager.getInstance();
-    sseEventManager.emitContactDeleted(ownerId, contact.id);
+    sseEventManager.emitContactDeleted(ownerId, deletedContact.id);
     
     return externalContact;
   }

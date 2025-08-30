@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
-import { UserRepository } from '../repositories/userRepository';
+import { LoginRequestDto, UserSessionDto } from '../dtos/external/user.dto';
 import { InternalUserDto } from '../dtos/internal/user.dto';
-import { UserSessionDto, LoginRequestDto } from '../dtos/external/user.dto';
 import { UserMapper } from '../dtos/mappers/user.mapper';
+import { UserRepository } from '../repositories/userRepository';
 import { AppErrorClass } from '../utils/errors';
 
 export class AuthService {
@@ -61,7 +61,7 @@ export class AuthService {
     firstName: string;
     lastName: string;
   }): Promise<InternalUserDto> {
-    // Check user limit (configurable via environment variable)
+    // Check Global user limit (configurable)
     const maxUsers = parseInt(process.env.MAX_USERS || '50');
     const userCount = await this.userRepository.getUserCount();
     if (userCount >= maxUsers) {

@@ -1,10 +1,10 @@
-import { prisma } from '../lib/prisma';
-import { 
+import {
   InternalContactHistoryDto,
   InternalContactHistoryWithContactDto,
   InternalCreateContactHistoryDto
 } from '../dtos/internal/contact.dto';
 import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
+import { prisma } from '../lib/prisma';
 
 export class ContactHistoryRepository {
   async findByContactId(
@@ -56,19 +56,6 @@ export class ContactHistoryRepository {
   async create(data: InternalCreateContactHistoryDto): Promise<InternalContactHistoryDto> {
     return prisma.contactHistory.create({
       data
-    });
-  }
-
-  async createWithTransaction(data: InternalCreateContactHistoryDto): Promise<InternalContactHistoryDto> {
-    return prisma.contactHistory.create({
-      data
-    });
-  }
-
-  async findByContactIdForValidation(contactId: string): Promise<Pick<InternalContactHistoryDto, 'id'>[]> {
-    return prisma.contactHistory.findMany({
-      where: { contactId },
-      select: { id: true }
     });
   }
 }

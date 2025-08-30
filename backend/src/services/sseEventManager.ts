@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import { CustomSession } from '../types';
 
 interface SSEClient {
   userId: string;
