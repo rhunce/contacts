@@ -40,6 +40,9 @@ model Contact {
   history    ContactHistory[]
 
   @@unique([ownerId, email])
+  @@index([ownerId])
+  @@index([ownerId, lastName])
+  @@index([externalId])
   @@map("contacts")
 }
 
@@ -54,6 +57,8 @@ model ContactHistory {
   
   contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
+  @@index([contactId])
+  @@index([contactId, createdAt])
   @@map("contact_history")
 }
 
@@ -71,5 +76,7 @@ model ApiKey {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
+  @@index([userId])
+  @@index([keyHash])
   @@map("api_keys")
 }
