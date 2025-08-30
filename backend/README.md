@@ -105,7 +105,7 @@ A TypeScript Express.js backend for managing contacts with Prisma ORM and Postgr
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Environment (development/production)
+- `NODE_ENV` - Environment (.../production)
 - `SESSION_SECRET` - Session encryption key
 - `CORS_ORIGIN` - Allowed CORS origin
 

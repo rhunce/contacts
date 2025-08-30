@@ -19,7 +19,7 @@ declare global {
 }
 
 export const responseInterceptor = (req: Request, res: Response, next: NextFunction) => {
-  // Add custom response methods
+  // Custom response methods
   res.success = (data: any, status: number = 200) => {
     const response = ResponseFormatter.success(data, status);
     res.status(response.status).json(response);

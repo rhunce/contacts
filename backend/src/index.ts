@@ -1,19 +1,19 @@
-import express from 'express';
-import session from 'express-session';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import RedisStore from 'connect-redis';
+import cors from 'cors';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
+import session from 'express-session';
+import helmet from 'helmet';
 import { createClient } from 'redis';
-import { prisma } from './lib/prisma';
 import { initializeDatabase } from './init-db';
+import { prisma } from './lib/prisma';
 import { responseInterceptor } from './middleware/responseInterceptor';
 
 // Routes
-import authRoutes from './routes/auth';
-import contactRoutes from './routes/contacts';
-import contactHistoryRoutes from './routes/contactHistory';
 import apiKeyRoutes from './routes/apiKeys';
+import authRoutes from './routes/auth';
+import contactHistoryRoutes from './routes/contactHistory';
+import contactRoutes from './routes/contacts';
 import externalContactRoutes from './routes/externalContacts';
 
 // SSE Event Manager
@@ -22,7 +22,7 @@ import { CustomSession } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV;
 
 // 1) Security headers
 app.use(helmet());
@@ -30,7 +30,7 @@ app.use(helmet());
 // 2) Trust the ALB / proxy so `req.secure` is accurate and `secure` cookies are set
 app.set('trust proxy', 1);
 
-// 3) CORS (allow localhost for dev + a single production origin via env)
+// 3) CORS (allow localhost for dev + production origin via env)
 const allowedOrigins = new Set<string>([
   'http://localhost:3001',
 ]);
@@ -38,7 +38,7 @@ if (process.env.CORS_ORIGIN) {
   allowedOrigins.add(process.env.CORS_ORIGIN);
 }
 
-// If you want stricter control, use a function. Array also works, but function lets us log mismatches.
+// 4) CORS middleware
 const corsMiddleware = cors({
   origin: (origin, callback) => {
     // allow non-browser tools (curl/postman) with no origin
@@ -48,41 +48,37 @@ const corsMiddleware = cors({
   },
   credentials: true,
 });
+
 app.use(corsMiddleware);
-// Preflight
+
 app.options('*', corsMiddleware);
 
-// 4) Rate limiting
+// 5) Rate limiting
 app.use(
   rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 minutes
     message: 'Too many requests from this IP, please try again later.',
     skip: (req) => req.method === 'OPTIONS'
   })
 );
 
-// 5) Body parsers
+// 6) Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// 6) Response interceptor (before routes)
+// 7) Response interceptor (adds custom response methods for response formatting/standardization)
 app.use(responseInterceptor);
-
-// 7) Health check (works even before DB initialization)
-app.get('/health', (req, res) => {
-  res.success({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // 8) Start the server with proper session configuration, then mount routes
 async function startServer() {
   try {
-    // Ensure DB is migrated/seeded as your helper dictates
+    // Initialize database
     await initializeDatabase();
 
-    // --- Build session options once ---
+    // Build session options
     const baseSessionOptions: session.SessionOptions = {
-      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+      secret: process.env.SESSION_SECRET || 'super-secret-session-key',
       resave: false,
       saveUninitialized: false,
       cookie: {
@@ -94,12 +90,13 @@ async function startServer() {
       },
     };
 
-    // --- Prefer Redis store in all environments if REDIS_URL provided ---
+    let redisClient: ReturnType<typeof createClient> | undefined;
+    // Prefer Redis store in all environments if REDIS_URL provided
     if (process.env.REDIS_URL) {
-      const redisClient = createClient({
+      redisClient = createClient({
         url: process.env.REDIS_URL,
         socket: {
-          // Use TLS in prod since your ElastiCache has transit encryption enabled
+          // Use TLS in prod since our ElastiCache has transit encryption enabled
           tls: NODE_ENV === 'production',
           rejectUnauthorized: false,
         },
@@ -131,6 +128,8 @@ async function startServer() {
     app.use('/contact-history', contactHistoryRoutes);
     app.use('/api/keys', apiKeyRoutes);
     app.use('/api/external/contact', externalContactRoutes);
+    // Health check
+    app.get('/health', (req, res) => res.success({ status: 'OK', timestamp: new Date().toISOString() }));
 
     // 10) SSE endpoint for real-time updates
     const sseEventManager = SSEEventManager.getInstance();
@@ -145,19 +144,18 @@ async function startServer() {
       return; // Explicit return for TypeScript
     });
 
-    // 10) 404 handler
+    // 11) 404 handler
     app.use('*', (req, res) => {
       res.notFound('Route not found');
     });
 
-    // 11) Error handler
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // 12) Error handler
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
       console.error('Unhandled error:', err);
       res.error('Internal server error');
     });
 
-    // 12) Start server
+    // 13) Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${NODE_ENV}`);
@@ -172,12 +170,14 @@ async function startServer() {
     process.on('SIGTERM', async () => {
       console.log('SIGTERM received, shutting down gracefully');
       await prisma.$disconnect();
+      if (redisClient) await redisClient.disconnect();
       process.exit(0);
     });
 
     process.on('SIGINT', async () => {
       console.log('SIGINT received, shutting down gracefully');
       await prisma.$disconnect();
+      if (redisClient) await redisClient.disconnect();
       process.exit(0);
     });
   } catch (error) {
