@@ -17,19 +17,9 @@ export interface UserWithContactsDto extends UserDto {
   contacts: ContactDto[];
 }
 
-export interface CreateUserDto {
-  email: string;
-  firstName: string;
-  lastName: string;
-  password: string; // Plain text password for registration
-}
 
-export interface UpdateUserDto {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  password?: string; // Plain text password for updates
-}
+
+
 
 export interface UserSessionDto {
   id: string;

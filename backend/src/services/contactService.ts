@@ -298,7 +298,6 @@ export class ContactService {
   }
 
   async deleteContactByExternalId(externalId: string, ownerId: string): Promise<ContactDto> {
-    // Verify the contact exists and belongs to the user (optimized)
     const contactExists = await this.contactRepository.existsByExternalIdAndOwner(externalId, ownerId);
     if (!contactExists) {
       throw AppErrorClass.notFound('Contact not found');

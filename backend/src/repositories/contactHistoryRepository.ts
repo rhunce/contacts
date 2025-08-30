@@ -1,6 +1,5 @@
 import {
   InternalContactHistoryDto,
-  InternalContactHistoryWithContactDto,
   InternalCreateContactHistoryDto
 } from '../dtos/internal/contact.dto';
 import { PaginationOptionsDto, PaginationResultDto } from '../dtos/shared/pagination.dto';
@@ -11,7 +10,7 @@ export class ContactHistoryRepository {
     contactId: string,
     options: PaginationOptionsDto,
     order: 'asc' | 'desc' = 'desc'
-  ): Promise<PaginationResultDto<InternalContactHistoryWithContactDto>> {
+  ): Promise<PaginationResultDto<InternalContactHistoryDto>> {
     const [history, total] = await Promise.all([
       prisma.contactHistory.findMany({
         where: { contactId },
@@ -19,22 +18,7 @@ export class ContactHistoryRepository {
           createdAt: order
         },
         skip: options.skip,
-        take: options.pageSize,
-        include: {
-          contact: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              phone: true,
-              ownerId: true,
-              externalId: true,
-              createdAt: true,
-              updatedAt: true
-            }
-          }
-        }
+        take: options.pageSize
       }),
       prisma.contactHistory.count({
         where: { contactId }

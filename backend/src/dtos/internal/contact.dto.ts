@@ -55,10 +55,6 @@ export interface InternalContactHistoryDto {
   // Note: ContactHistory doesn't have updatedAt in the schema
 }
 
-export interface InternalContactHistoryWithContactDto extends InternalContactHistoryDto {
-  contact: InternalContactDto;
-}
-
 export interface InternalCreateContactHistoryDto {
   contactId: string;
   firstName?: { before: string; after: string };

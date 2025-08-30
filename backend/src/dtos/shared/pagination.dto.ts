@@ -6,7 +6,7 @@ export const PAGINATION_LIMITS = {
   DEFAULT_PAGE_SIZE: 10,
   MIN_PAGE_SIZE: 1,
   MAX_PAGE: 10000, // Prevent extremely large page numbers
-} as const;
+};
 
 export interface PaginationOptionsDto {
   page: number;

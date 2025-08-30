@@ -1,18 +1,16 @@
-import { 
-  InternalContactDto, 
-  InternalContactWithOwnerDto, 
-  InternalCreateContactDto, 
-  InternalUpdateContactDto,
-  InternalContactHistoryDto,
-  InternalContactHistoryWithContactDto
-} from '../internal/contact.dto';
-import { 
-  ContactDto, 
-  CreateContactDto, 
-  UpdateContactDto,
+import {
+  ContactDto,
   ContactHistoryDto,
-  ContactHistoryWithContactDto
+  CreateContactDto,
+  UpdateContactDto
 } from '../external/contact.dto';
+import {
+  InternalContactDto,
+  InternalContactHistoryDto,
+  InternalContactWithOwnerDto,
+  InternalCreateContactDto,
+  InternalUpdateContactDto
+} from '../internal/contact.dto';
 
 // Mapper functions to transform between internal and external DTOs
 
@@ -83,34 +81,6 @@ export class ContactMapper {
       phone: internal.phone as { before: string; after: string } | undefined,
       createdAt: internal.createdAt.toISOString(),
       updatedAt: internal.createdAt.toISOString(), // ContactHistory doesn't have updatedAt, use createdAt
-    };
-  }
-
-  // Transform internal contact history with contact to external contact history with contact
-  static toContactHistoryWithContactDto(internal: InternalContactHistoryWithContactDto): ContactHistoryWithContactDto {
-    return {
-      id: internal.id,
-      firstName: internal.firstName,
-      lastName: internal.lastName,
-      email: internal.email,
-      phone: internal.phone,
-      createdAt: internal.createdAt.toISOString(),
-      updatedAt: internal.createdAt.toISOString(), // ContactHistory doesn't have updatedAt, use createdAt
-      contact: {
-        id: internal.contact.id,
-        firstName: internal.contact.firstName,
-        lastName: internal.contact.lastName,
-        email: internal.contact.email,
-        phone: internal.contact.phone,
-        createdAt: internal.contact.createdAt.toISOString(),
-        updatedAt: internal.contact.updatedAt.toISOString(),
-        owner: {
-          id: internal.contact.ownerId, // We don't have owner data in this context
-          firstName: '', // Placeholder - would need to fetch owner data if needed
-          lastName: '',
-          email: ''
-        }
-      }
     };
   }
 }

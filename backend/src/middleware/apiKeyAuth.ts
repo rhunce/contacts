@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Response } from 'express';
 import { ApiKeyService } from '../services/apiKeyService';
 import { AuthenticatedRequest } from '../types';
 

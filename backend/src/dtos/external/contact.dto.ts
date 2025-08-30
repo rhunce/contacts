@@ -43,6 +43,4 @@ export interface ContactHistoryDto extends BaseEntityDto {
   createdAt: string; // ISO string for API
 }
 
-export interface ContactHistoryWithContactDto extends ContactHistoryDto {
-  contact: ContactDto;
-}
+

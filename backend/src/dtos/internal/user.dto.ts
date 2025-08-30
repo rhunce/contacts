@@ -34,12 +34,7 @@ export interface InternalCreateUserDto {
   password: string; // Hashed password
 }
 
-export interface InternalUpdateUserDto {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  password?: string; // Hashed password
-}
+
 
 export interface InternalUserSessionDto {
   id: string;

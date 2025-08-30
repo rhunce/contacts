@@ -39,11 +39,3 @@ export interface AppError {
   field?: string;
   code?: string;
 }
-
-// Note: Most request/response types have been moved to DTOs
-// Only keeping Express-specific types here
-export interface ContactHistoryChange {
-  before: string;
-  after: string;
-}
-

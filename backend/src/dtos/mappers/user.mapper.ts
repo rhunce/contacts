@@ -1,5 +1,5 @@
 import { InternalUserDto, InternalUserWithContactsDto, InternalUserSessionDto } from '../internal/user.dto';
-import { UserDto, UserWithContactsDto, UserSessionDto, CreateUserDto, UpdateUserDto } from '../external/user.dto';
+import { UserDto, UserWithContactsDto, UserSessionDto } from '../external/user.dto';
 import { ContactDto } from '../external/contact.dto';
 
 // Mapper functions to transform between internal and external DTOs
@@ -53,27 +53,5 @@ export class UserMapper {
       lastName: internal.lastName,
       // NO password field - security!
     };
-  }
-
-  // Transform external create user to internal create user
-  static toInternalCreateDto(external: CreateUserDto): Omit<InternalUserDto, 'id' | 'createdAt' | 'updatedAt'> {
-    return {
-      email: external.email,
-      firstName: external.firstName,
-      lastName: external.lastName,
-      password: external.password, // This should be hashed before saving
-    };
-  }
-
-  // Transform external update user to internal update user
-  static toInternalUpdateDto(external: UpdateUserDto): Partial<InternalUserDto> {
-    const update: Partial<InternalUserDto> = {};
-    
-    if (external.email !== undefined) update.email = external.email;
-    if (external.firstName !== undefined) update.firstName = external.firstName;
-    if (external.lastName !== undefined) update.lastName = external.lastName;
-    if (external.password !== undefined) update.password = external.password; // This should be hashed before saving
-    
-    return update;
   }
 }
