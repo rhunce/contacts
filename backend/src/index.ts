@@ -74,7 +74,23 @@ app.get('/health', (req, res) => {
   res.success({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 8) Mount API routes (always available for testing)
+// 8) Session middleware (needed for routes to work)
+const baseSessionOptions: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: NODE_ENV === 'production',
+    sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24h
+  },
+};
+
+// Use in-memory session store for testing
+app.use(session(baseSessionOptions));
+
+// 9) Mount API routes (always available for testing)
 app.use('/', authRoutes);
 app.use('/contact', contactRoutes);
 app.use('/contacts', contactRoutes);
@@ -82,7 +98,7 @@ app.use('/contact-history', contactHistoryRoutes);
 app.use('/api/keys', apiKeyRoutes);
 app.use('/api/external/contact', externalContactRoutes);
 
-// 9) SSE endpoint for real-time updates
+// 10) SSE endpoint for real-time updates
 const sseEventManager = SSEEventManager.getInstance();
 
 app.get('/api/events', (req, res) => {
@@ -95,37 +111,23 @@ app.get('/api/events', (req, res) => {
   return; // Explicit return for TypeScript
 });
 
-// 10) 404 handler
+// 11) 404 handler
 app.use('*', (req, res) => {
   res.notFound('Route not found');
 });
 
-// 11) Error handler
+// 12) Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled error:', err);
   res.error('Internal server error');
 });
 
-// 12) Start the server with proper session configuration (only in non-test environments)
+// 13) Start the server with proper session configuration (only in non-test environments)
 async function startServer() {
   try {
     // Ensure DB is migrated/seeded as your helper dictates
     await initializeDatabase();
-
-    // --- Build session options once ---
-    const baseSessionOptions: session.SessionOptions = {
-      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        // Cross-site cookies need SameSite=None and Secure in production
-        secure: NODE_ENV === 'production',
-        sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24h
-      },
-    };
 
     // --- Prefer Redis store in all environments if REDIS_URL provided ---
     if (process.env.REDIS_URL) {
@@ -146,15 +148,13 @@ async function startServer() {
         prefix: 'sess:',
       });
 
+      // Replace in-memory session with Redis session
       app.use(
         session({
           ...baseSessionOptions,
           store: redisStore,
         })
       );
-    } else {
-      console.log('REDIS_URL not set — using in-memory session store');
-      app.use(session(baseSessionOptions));
     }
 
     // Start server

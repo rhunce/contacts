@@ -16,6 +16,7 @@ jest.mock('../../../src/lib/prisma', () => ({
   prisma: {
     apiKey: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
@@ -230,12 +231,12 @@ describe('ApiKeyService', () => {
     it('should revoke API key successfully', async () => {
       const { prisma } = require('../../../src/lib/prisma');
       
-      prisma.apiKey.findUnique.mockResolvedValue(mockApiKeyRecord);
+      prisma.apiKey.findFirst.mockResolvedValue(mockApiKeyRecord);
       prisma.apiKey.update.mockResolvedValue({ ...mockApiKeyRecord, isActive: false });
 
       await apiKeyService.revokeApiKey(apiKeyId, userId);
 
-      expect(prisma.apiKey.findUnique).toHaveBeenCalledWith({
+      expect(prisma.apiKey.findFirst).toHaveBeenCalledWith({
         where: { id: apiKeyId }
       });
       expect(prisma.apiKey.update).toHaveBeenCalledWith({
@@ -247,13 +248,13 @@ describe('ApiKeyService', () => {
     it('should throw error when API key not found', async () => {
       const { prisma } = require('../../../src/lib/prisma');
       
-      prisma.apiKey.findUnique.mockResolvedValue(null);
+      prisma.apiKey.findFirst.mockResolvedValue(null);
 
       await expect(apiKeyService.revokeApiKey(apiKeyId, userId)).rejects.toThrow(
         AppErrorClass.notFound('API key not found')
       );
 
-      expect(prisma.apiKey.findUnique).toHaveBeenCalledWith({
+      expect(prisma.apiKey.findFirst).toHaveBeenCalledWith({
         where: { id: apiKeyId }
       });
       expect(prisma.apiKey.update).not.toHaveBeenCalled();
@@ -263,13 +264,13 @@ describe('ApiKeyService', () => {
       const { prisma } = require('../../../src/lib/prisma');
       
       const differentUserApiKey = { ...mockApiKeyRecord, userId: 'different-user' };
-      prisma.apiKey.findUnique.mockResolvedValue(differentUserApiKey);
+      prisma.apiKey.findFirst.mockResolvedValue(differentUserApiKey);
 
       await expect(apiKeyService.revokeApiKey(apiKeyId, userId)).rejects.toThrow(
         AppErrorClass.notFound('API key not found')
       );
 
-      expect(prisma.apiKey.findUnique).toHaveBeenCalledWith({
+      expect(prisma.apiKey.findFirst).toHaveBeenCalledWith({
         where: { id: apiKeyId }
       });
       expect(prisma.apiKey.update).not.toHaveBeenCalled();
