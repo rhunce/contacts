@@ -20,7 +20,7 @@ import externalContactRoutes from './routes/externalContacts';
 import { SSEEventManager } from './services/sseEventManager';
 import { CustomSession } from './types';
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 

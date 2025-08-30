@@ -4,6 +4,7 @@ import { AppErrorClass } from '../../../src/utils/errors';
 
 // Mock the UserRepository
 jest.mock('../../../src/repositories/userRepository');
+
 const mockUserRepository = UserRepository as jest.MockedClass<typeof UserRepository>;
 
 describe('AuthService', () => {
@@ -14,104 +15,139 @@ describe('AuthService', () => {
     jest.clearAllMocks();
   });
 
-  describe('register', () => {
-    it('should register a new user successfully', async () => {
-      const userData = {
-        email: 'test@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe'
-      };
+  describe('createUser', () => {
+    const userData = {
+      email: 'test@example.com',
+      password: 'password123',
+      firstName: 'John',
+      lastName: 'Doe'
+    };
 
-      const mockUser = {
-        id: 'user-123',
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+    const mockUser = {
+      id: 'user-123',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      password: 'hashedPassword',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-      mockUserRepository.prototype.findByEmail.mockResolvedValue(null);
+    it('should create a user successfully', async () => {
+      mockUserRepository.prototype.getUserCount.mockResolvedValue(0);
       mockUserRepository.prototype.create.mockResolvedValue(mockUser);
 
-      const result = await authService.register(userData);
+      const result = await authService.createUser(userData);
 
-      expect(result.user.email).toBe(userData.email);
-      expect(result.user.firstName).toBe(userData.firstName);
-      expect(result.user.lastName).toBe(userData.lastName);
-      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(userData.email);
-      expect(mockUserRepository.prototype.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName
-        })
-      );
+      expect(result).toEqual(mockUser);
+      expect(mockUserRepository.prototype.getUserCount).toHaveBeenCalled();
+      expect(mockUserRepository.prototype.create).toHaveBeenCalledWith({
+        email: userData.email,
+        password: expect.any(String), // Hashed password
+        firstName: userData.firstName,
+        lastName: userData.lastName
+      });
     });
 
-    it('should throw error if user already exists', async () => {
-      const userData = {
-        email: 'test@example.com',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe'
-      };
+    it('should throw error when user limit is reached', async () => {
+      const maxUsers = 50;
+      mockUserRepository.prototype.getUserCount.mockResolvedValue(maxUsers);
 
-      const existingUser = {
-        id: 'user-123',
-        email: userData.email,
-        firstName: 'Jane',
-        lastName: 'Doe',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      mockUserRepository.prototype.findByEmail.mockResolvedValue(existingUser);
-
-      await expect(authService.register(userData)).rejects.toThrow(
-        AppErrorClass.conflict('User with this email already exists')
+      await expect(authService.createUser(userData)).rejects.toThrow(
+        AppErrorClass.userLimitReached(maxUsers)
       );
+
+      expect(mockUserRepository.prototype.getUserCount).toHaveBeenCalled();
+      expect(mockUserRepository.prototype.create).not.toHaveBeenCalled();
     });
   });
 
-  describe('login', () => {
-    it('should login user with valid credentials', async () => {
-      const loginData = {
-        email: 'test@example.com',
-        password: 'password123'
-      };
+  describe('validateCredentials', () => {
+    const credentials = {
+      email: 'test@example.com',
+      password: 'password123'
+    };
 
+    const mockUser = {
+      id: 'user-123',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      password: 'hashedPassword',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    it('should validate credentials successfully', async () => {
+      mockUserRepository.prototype.findByEmail.mockResolvedValue(mockUser);
+
+      const result = await authService.validateCredentials(credentials);
+
+      expect(result).toEqual(mockUser);
+      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(credentials.email);
+    });
+
+    it('should return null for invalid email', async () => {
+      mockUserRepository.prototype.findByEmail.mockResolvedValue(null);
+
+      const result = await authService.validateCredentials(credentials);
+
+      expect(result).toBeNull();
+      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(credentials.email);
+    });
+
+    it('should return null for invalid password', async () => {
+      mockUserRepository.prototype.findByEmail.mockResolvedValue(mockUser);
+
+      const result = await authService.validateCredentials({
+        ...credentials,
+        password: 'wrongpassword'
+      });
+
+      expect(result).toBeNull();
+      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(credentials.email);
+    });
+  });
+
+  describe('getUserById', () => {
+    it('should get user by ID', async () => {
       const mockUser = {
         id: 'user-123',
-        email: loginData.email,
+        email: 'test@example.com',
         firstName: 'John',
         lastName: 'Doe',
-        passwordHash: '$2b$10$hashedpassword',
+        password: 'hashedPassword',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      mockUserRepository.prototype.findById.mockResolvedValue(mockUser);
+
+      const result = await authService.getUserById('user-123');
+
+      expect(result).toEqual(mockUser);
+      expect(mockUserRepository.prototype.findById).toHaveBeenCalledWith('user-123');
+    });
+  });
+
+  describe('getUserByEmail', () => {
+    it('should get user by email', async () => {
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'hashedPassword',
         createdAt: new Date(),
         updatedAt: new Date()
       };
 
       mockUserRepository.prototype.findByEmail.mockResolvedValue(mockUser);
-      mockUserRepository.prototype.updateLastLogin.mockResolvedValue(mockUser);
 
-      const result = await authService.login(loginData);
+      const result = await authService.getUserByEmail('test@example.com');
 
-      expect(result.user.email).toBe(loginData.email);
-      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(loginData.email);
-    });
-
-    it('should throw error for invalid email', async () => {
-      const loginData = {
-        email: 'nonexistent@example.com',
-        password: 'password123'
-      };
-
-      mockUserRepository.prototype.findByEmail.mockResolvedValue(null);
-
-      await expect(authService.login(loginData)).rejects.toThrow(
-        AppErrorClass.unauthorized('Invalid email or password')
-      );
+      expect(result).toEqual(mockUser);
+      expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith('test@example.com');
     });
   });
 });
