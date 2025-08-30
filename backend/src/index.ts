@@ -125,10 +125,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // 13) Start the server with proper session configuration (only in non-test environments)
 async function startServer() {
-  console.log('startServer function called');
   try {
     // Ensure DB is migrated/seeded as your helper dictates
-    console.log('About to call initializeDatabase');
     await initializeDatabase();
 
     // --- Prefer Redis store in all environments if REDIS_URL provided ---
@@ -189,10 +187,6 @@ async function startServer() {
 }
 
 // Only start the server if not in test environment
-console.log('NODE_ENV:', process.env.NODE_ENV);
 if (process.env.NODE_ENV !== 'test') {
-  console.log('Starting server...');
   startServer();
-} else {
-  console.log('Skipping server start in test environment');
 }

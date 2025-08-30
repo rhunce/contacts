@@ -18,7 +18,7 @@ describe('Authentication Endpoints', () => {
     await prisma.user.deleteMany();
   });
 
-  describe('POST /api/auth/register', () => {
+  describe('POST /register', () => {
     it('should register a new user successfully', async () => {
       const userData = {
         email: 'test@example.com',
@@ -28,7 +28,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(201);
 
@@ -51,13 +51,13 @@ describe('Authentication Endpoints', () => {
 
       // Create first user
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(201);
 
       // Try to create second user with same email
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(409);
 
@@ -74,7 +74,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(400);
 
@@ -90,7 +90,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(400);
 
@@ -99,7 +99,7 @@ describe('Authentication Endpoints', () => {
     });
   });
 
-  describe('POST /api/auth/login', () => {
+  describe('POST /login', () => {
     beforeEach(async () => {
       // Create a test user
       const userData = {
@@ -110,7 +110,7 @@ describe('Authentication Endpoints', () => {
       };
 
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData);
     });
 
@@ -121,7 +121,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send(loginData)
         .expect(200);
 
@@ -138,7 +138,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send(loginData)
         .expect(401);
 
@@ -153,7 +153,7 @@ describe('Authentication Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send(loginData)
         .expect(401);
 
@@ -162,7 +162,7 @@ describe('Authentication Endpoints', () => {
     });
   });
 
-  describe('POST /api/auth/logout', () => {
+  describe('POST /logout', () => {
     let authCookie: string;
 
     beforeEach(async () => {
@@ -175,11 +175,11 @@ describe('Authentication Endpoints', () => {
       };
 
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData);
 
       const loginResponse = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send({
           email: 'test@example.com',
           password: 'password123'
@@ -190,7 +190,7 @@ describe('Authentication Endpoints', () => {
 
     it('should logout user successfully', async () => {
       const response = await request(app)
-        .post('/api/auth/logout')
+        .post('/logout')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -199,7 +199,7 @@ describe('Authentication Endpoints', () => {
     });
   });
 
-  describe('GET /api/auth/me', () => {
+  describe('GET /me', () => {
     let authCookie: string;
 
     beforeEach(async () => {
@@ -212,11 +212,11 @@ describe('Authentication Endpoints', () => {
       };
 
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData);
 
       const loginResponse = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send({
           email: 'test@example.com',
           password: 'password123'
@@ -227,7 +227,7 @@ describe('Authentication Endpoints', () => {
 
     it('should return current user when authenticated', async () => {
       const response = await request(app)
-        .get('/api/auth/me')
+        .get('/me')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -238,7 +238,7 @@ describe('Authentication Endpoints', () => {
 
     it('should return unauthorized when not authenticated', async () => {
       const response = await request(app)
-        .get('/api/auth/me')
+        .get('/me')
         .expect(401);
 
       expect(response.body.status).toBe(401);

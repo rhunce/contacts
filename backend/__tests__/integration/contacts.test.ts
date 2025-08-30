@@ -30,13 +30,13 @@ describe('Contacts Endpoints', () => {
     };
 
     const registerResponse = await request(app)
-      .post('/api/auth/register')
+      .post('/register')
       .send(userData);
 
     userId = registerResponse.body.data.user.id;
 
     const loginResponse = await request(app)
-      .post('/api/auth/login')
+      .post('/login')
       .send({
         email: 'test@example.com',
         password: 'password123'

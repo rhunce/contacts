@@ -242,7 +242,7 @@ describe('ApiKeyService', () => {
       prisma.apiKey.findFirst.mockResolvedValue(mockApiKeyRecord);
       prisma.apiKey.update.mockResolvedValue({ ...mockApiKeyRecord, isActive: false });
 
-      await apiKeyService.revokeApiKey(apiKeyId, userId);
+      await apiKeyService.revokeApiKey(userId, apiKeyId);
 
       expect(prisma.apiKey.findFirst).toHaveBeenCalledWith({
         where: { id: apiKeyId, userId }
@@ -258,7 +258,7 @@ describe('ApiKeyService', () => {
       
       prisma.apiKey.findFirst.mockResolvedValue(null);
 
-      await expect(apiKeyService.revokeApiKey(apiKeyId, userId)).rejects.toThrow(
+      await expect(apiKeyService.revokeApiKey(userId, apiKeyId)).rejects.toThrow(
         AppErrorClass.notFound('API key not found')
       );
 
@@ -274,7 +274,7 @@ describe('ApiKeyService', () => {
       const differentUserApiKey = { ...mockApiKeyRecord, userId: 'different-user' };
       prisma.apiKey.findFirst.mockResolvedValue(null); // Should return null since userId doesn't match
 
-      await expect(apiKeyService.revokeApiKey(apiKeyId, userId)).rejects.toThrow(
+      await expect(apiKeyService.revokeApiKey(userId, apiKeyId)).rejects.toThrow(
         AppErrorClass.notFound('API key not found')
       );
 
