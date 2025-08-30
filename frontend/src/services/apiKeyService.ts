@@ -9,7 +9,7 @@ export const apiKeyService = {
 
   async createApiKey(data: CreateApiKeyRequest): Promise<ApiKeyResponse> {
     const response = await api.post('/api/keys', data);
-    return response.data;
+    return response.data.data;
   },
 
   async revokeApiKey(id: string): Promise<void> {
