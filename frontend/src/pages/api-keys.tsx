@@ -319,7 +319,7 @@ const ApiKeysPage: React.FC = () => {
               <DialogContent>
                 <Alert severity="warning" sx={{ mb: 3 }}>
                   <Typography variant="body2">
-                    <strong>Important:</strong> This is the only time you'll see this API key. 
+                    <strong>Important:</strong> This is the only time you&apos;ll see this API key. 
                     Make sure to copy it and store it securely.
                   </Typography>
                 </Alert>
