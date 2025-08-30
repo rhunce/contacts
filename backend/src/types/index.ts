@@ -42,8 +42,8 @@ export interface AppError {
 
 // Note: Most request/response types have been moved to DTOs
 // Only keeping Express-specific types here
-
 export interface ContactHistoryChange {
   before: string;
   after: string;
 }
+

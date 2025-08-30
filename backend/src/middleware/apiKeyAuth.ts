@@ -33,23 +33,3 @@ export const requireApiKey = async (req: ApiKeyRequest, res: Response, next: Nex
     return res.unauthorized('Invalid API key');
   }
 };
-
-/**
- * Optional API key authentication - doesn't fail if no API key provided
- */
-export const optionalApiKey = async (req: ApiKeyRequest, res: Response, next: NextFunction) => {
-  try {
-    const apiKey = req.headers['x-api-key'] as string;
-
-    if (apiKey) {
-      const userId = await apiKeyService.validateApiKey(apiKey);
-      req.apiKeyUserId = userId;
-    }
-    
-    next();
-  } catch (error: any) {
-    console.error('Optional API key authentication error:', error);
-    // Don't fail the request, just continue without API key user
-    next();
-  }
-};

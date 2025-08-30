@@ -1,7 +1,7 @@
-import { Router, Response } from 'express';
+import { Response, Router } from 'express';
+import { requireAuth } from '../middleware/auth';
 import { ApiKeyService, CreateApiKeyDto } from '../services/apiKeyService';
 import { AuthenticatedRequest, CustomSession } from '../types';
-import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 const apiKeyService = new ApiKeyService();

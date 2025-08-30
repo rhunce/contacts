@@ -1,7 +1,7 @@
-import { Router, Response } from 'express';
-import { ContactService } from '../services/contactService';
-import { ApiKeyRequest, requireApiKey } from '../middleware/apiKeyAuth';
+import { Response, Router } from 'express';
 import { CreateContactDto, UpdateContactDto } from '../dtos/external/contact.dto';
+import { ApiKeyRequest, requireApiKey } from '../middleware/apiKeyAuth';
+import { ContactService } from '../services/contactService';
 
 const router = Router();
 const contactService = new ContactService();

@@ -17,9 +17,9 @@ import contactRoutes from './routes/contacts';
 import externalContactRoutes from './routes/externalContacts';
 
 // SSE Event Manager
-import { SSEEventManager } from './services/sseEventManager';
-import { CustomSession, AuthenticatedRequest } from './types';
 import { requireAuth } from './middleware/auth';
+import { SSEEventManager } from './services/sseEventManager';
+import { AuthenticatedRequest } from './types';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

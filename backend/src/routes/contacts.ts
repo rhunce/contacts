@@ -1,9 +1,9 @@
-import { Router, Response } from 'express';
+import { Response, Router } from 'express';
+import { CreateContactDto, UpdateContactDto } from '../dtos/external/contact.dto';
+import { PaginationQueryDto, validatePaginationParams } from '../dtos/shared/pagination.dto';
+import { requireAuth } from '../middleware/auth';
 import { ContactService } from '../services/contactService';
 import { AuthenticatedRequest } from '../types';
-import { CreateContactDto, UpdateContactDto } from '../dtos/external/contact.dto';
-import { PaginationQueryDto } from '../dtos/shared/pagination.dto';
-import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 const contactService = new ContactService();
@@ -11,15 +11,22 @@ const contactService = new ContactService();
 // GET /contacts - Get paginated contacts
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { page = '1', pageSize = '10', filter } = req.query as PaginationQueryDto & { filter?: string };
-    const pageNum = parseInt(page);
-    const pageSizeNum = parseInt(pageSize);
+    const { page, pageSize, filter } = req.query as PaginationQueryDto & { filter?: string };
+    
+    // Validate pagination parameters
+    const { page: pageNum, pageSize: pageSizeNum } = validatePaginationParams(page, pageSize);
 
     const result = await contactService.getContacts(req.userId!, pageNum, pageSizeNum, filter);
     
     res.paginated(result.data, result.pagination);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching contacts:', error);
+    
+    // Handle pagination validation errors
+    if (error.message.includes('Page must be between') || error.message.includes('Page size must be between')) {
+      return res.validationError([{ message: error.message, field: 'pagination' }]);
+    }
+    
     res.error('Internal server error');
   }
 });

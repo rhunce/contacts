@@ -1,8 +1,8 @@
-import { Router, Request, Response } from 'express';
-import { AuthService } from '../services/authService';
+import { Request, Response, Router } from 'express';
 import { LoginRequestDto } from '../dtos/external/user.dto';
-import { CustomSession, AuthenticatedRequest } from '../types';
 import { requireAuth } from '../middleware/auth';
+import { AuthService } from '../services/authService';
+import { AuthenticatedRequest, CustomSession } from '../types';
 
 const router = Router();
 const authService = new AuthService();
