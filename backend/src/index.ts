@@ -20,7 +20,7 @@ import externalContactRoutes from './routes/externalContacts';
 import { SSEEventManager } from './services/sseEventManager';
 import { CustomSession } from './types';
 
-export const app = express();
+const app = express();
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
@@ -74,7 +74,7 @@ app.get('/health', (req, res) => {
   res.success({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 8) Session middleware (needed for routes to work)
+// 8) Session middleware
 const baseSessionOptions: session.SessionOptions = {
   secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
   resave: false,
@@ -87,10 +87,7 @@ const baseSessionOptions: session.SessionOptions = {
   },
 };
 
-// Use in-memory session store for testing
-app.use(session(baseSessionOptions));
-
-// 9) Mount API routes (always available for testing)
+// 9) Mount API routes
 app.use('/', authRoutes);
 app.use('/contact', contactRoutes);
 app.use('/contacts', contactRoutes);
@@ -123,7 +120,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.error('Internal server error');
 });
 
-// 13) Start the server with proper session configuration (only in non-test environments)
+// 13) Start the server
 async function startServer() {
   try {
     // Ensure DB is migrated/seeded as your helper dictates
@@ -155,6 +152,9 @@ async function startServer() {
           store: redisStore,
         })
       );
+    } else {
+      // Use in-memory session store if no Redis
+      app.use(session(baseSessionOptions));
     }
 
     // Start server
@@ -186,7 +186,4 @@ async function startServer() {
   }
 }
 
-// Only start the server if not in test environment
-if (process.env.NODE_ENV !== 'test') {
-  startServer();
-}
+startServer();

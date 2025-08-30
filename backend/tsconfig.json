@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "types": ["node", "jest"],
+    "types": ["node"],
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
@@ -25,8 +25,7 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "src/**/*",
-    "__tests__/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
