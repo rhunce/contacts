@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom';
 
+// Set NODE_ENV to test to avoid React production build warnings
+process.env.NODE_ENV = 'test';
+
 // Mock Next.js router
 jest.mock('next/router', () => ({
   useRouter() {

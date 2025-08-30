@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import '@jest/globals';
 
 // Global test setup
 beforeAll(async () => {
