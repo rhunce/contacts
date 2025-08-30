@@ -74,57 +74,25 @@ app.get('/health', (req, res) => {
   res.success({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 8) Session middleware
-const baseSessionOptions: session.SessionOptions = {
-  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: NODE_ENV === 'production',
-    sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24h
-  },
-};
-
-// 9) Mount API routes
-app.use('/', authRoutes);
-app.use('/contact', contactRoutes);
-app.use('/contacts', contactRoutes);
-app.use('/contact-history', contactHistoryRoutes);
-app.use('/api/keys', apiKeyRoutes);
-app.use('/api/external/contact', externalContactRoutes);
-
-// 10) SSE endpoint for real-time updates
-const sseEventManager = SSEEventManager.getInstance();
-
-app.get('/api/events', (req, res) => {
-  const session = req.session as CustomSession;
-  if (!session.userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  sseEventManager.addClient(session.userId, res);
-  return; // Explicit return for TypeScript
-});
-
-// 11) 404 handler
-app.use('*', (req, res) => {
-  res.notFound('Route not found');
-});
-
-// 12) Error handler
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.error('Internal server error');
-});
-
-// 13) Start the server
+// 8) Start the server with proper session configuration, then mount routes
 async function startServer() {
   try {
     // Ensure DB is migrated/seeded as your helper dictates
     await initializeDatabase();
+
+    // --- Build session options once ---
+    const baseSessionOptions: session.SessionOptions = {
+      secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        // Cross-site cookies need SameSite=None and Secure in production
+        secure: NODE_ENV === 'production',
+        sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24h
+      },
+    };
 
     // --- Prefer Redis store in all environments if REDIS_URL provided ---
     if (process.env.REDIS_URL) {
@@ -145,7 +113,6 @@ async function startServer() {
         prefix: 'sess:',
       });
 
-      // Replace in-memory session with Redis session
       app.use(
         session({
           ...baseSessionOptions,
@@ -153,11 +120,44 @@ async function startServer() {
         })
       );
     } else {
-      // Use in-memory session store if no Redis
+      console.log('REDIS_URL not set — using in-memory session store');
       app.use(session(baseSessionOptions));
     }
 
-    // Start server
+    // 9) Mount API routes AFTER session middleware so req.session is available
+    app.use('/', authRoutes);
+    app.use('/contact', contactRoutes);
+    app.use('/contacts', contactRoutes);
+    app.use('/contact-history', contactHistoryRoutes);
+    app.use('/api/keys', apiKeyRoutes);
+    app.use('/api/external/contact', externalContactRoutes);
+
+    // 10) SSE endpoint for real-time updates
+    const sseEventManager = SSEEventManager.getInstance();
+    
+    app.get('/api/events', (req, res) => {
+      const session = req.session as CustomSession;
+      if (!session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      sseEventManager.addClient(session.userId, res);
+      return; // Explicit return for TypeScript
+    });
+
+    // 10) 404 handler
+    app.use('*', (req, res) => {
+      res.notFound('Route not found');
+    });
+
+    // 11) Error handler
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+      console.error('Unhandled error:', err);
+      res.error('Internal server error');
+    });
+
+    // 12) Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${NODE_ENV}`);
