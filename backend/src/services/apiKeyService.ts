@@ -36,13 +36,6 @@ export class ApiKeyService {
   }
 
   /**
-   * Verify an API key against its hash
-   */
-  private async verifyApiKey(apiKey: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(apiKey, hash);
-  }
-
-  /**
    * Create a new API key for a user
    */
   async createApiKey(userId: string, data: CreateApiKeyDto): Promise<{ apiKey: string; info: ApiKeyInfo }> {
@@ -90,9 +83,13 @@ export class ApiKeyService {
    * Validate an API key and return user ID
    */
   async validateApiKey(apiKey: string): Promise<string> {
-    // Find all active API keys
-    const apiKeyRecords = await prisma.apiKey.findMany({
+    // Hash the provided API key to search for it directly
+    const apiKeyHash = await this.hashApiKey(apiKey);
+
+    // Find the specific API key by its hash
+    const apiKeyRecord = await prisma.apiKey.findFirst({
       where: {
+        keyHash: apiKeyHash,
         isActive: true,
         OR: [
           { expiresAt: null },
@@ -101,20 +98,17 @@ export class ApiKeyService {
       }
     });
 
-    // Check each API key against the provided key
-    for (const record of apiKeyRecords) {
-      const isValid = await this.verifyApiKey(apiKey, record.keyHash);
-      if (isValid) {
-        // Update last used timestamp
-        await prisma.apiKey.update({
-          where: { id: record.id },
-          data: { lastUsedAt: new Date() }
-        });
-        return record.userId;
-      }
+    if (!apiKeyRecord) {
+      throw AppErrorClass.unauthorized('Invalid API key');
     }
 
-    throw AppErrorClass.unauthorized('Invalid API key');
+    // Update last used timestamp
+    await prisma.apiKey.update({
+      where: { id: apiKeyRecord.id },
+      data: { lastUsedAt: new Date() }
+    });
+
+    return apiKeyRecord.userId;
   }
 
   /**
