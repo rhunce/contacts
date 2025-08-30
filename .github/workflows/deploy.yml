@@ -49,7 +49,7 @@ jobs:
 
     - name: Install backend dependencies
       working-directory: ./backend
-      run: npm ci
+      run: npm ci --include=dev
 
     - name: Setup Prisma
       working-directory: ./backend
@@ -88,7 +88,7 @@ jobs:
 
     - name: Install frontend dependencies
       working-directory: ./frontend
-      run: npm ci
+      run: npm ci --include=dev
 
     - name: Run frontend tests
       working-directory: ./frontend
