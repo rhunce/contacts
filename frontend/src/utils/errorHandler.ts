@@ -47,6 +47,10 @@ export function getErrorMessage(error: any): string {
       return 'Request timed out. The server is processing your request, but it may take longer than expected. Please try again.';
     
     case ErrorType.VALIDATION_ERROR:
+      // Check for structured error response from backend
+      if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
+        return error.response.data.errors[0].message;
+      }
       return error?.response?.data?.message || error?.message || 'Validation error occurred.';
     
     case ErrorType.UNAUTHORIZED:
