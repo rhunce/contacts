@@ -60,4 +60,49 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Respon
   }
 });
 
+// POST /api/keys/:id/restore - Restore a revoked API key
+router.post('/:id/restore', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    await apiKeyService.restoreApiKey(userId, id);
+    res.success({ message: 'API key restored successfully' });
+  } catch (error: any) {
+    console.error('Error restoring API key:', error);
+    res.appError(error);
+  }
+});
+
+// DELETE /api/keys/:id/permanent - Permanently delete an API key
+router.delete('/:id/permanent', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    await apiKeyService.deleteApiKey(userId, id);
+    res.success({ message: 'API key permanently deleted' });
+  } catch (error: any) {
+    console.error('Error deleting API key:', error);
+    res.appError(error);
+  }
+});
+
+// GET /api/keys/:id/usage - Get API key usage statistics
+router.get('/:id/usage', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    const usageStats = await apiKeyService.getApiKeyUsage(userId, id);
+    res.success(usageStats);
+  } catch (error: any) {
+    console.error('Error fetching API key usage:', error);
+    res.appError(error);
+  }
+});
+
 export default router;

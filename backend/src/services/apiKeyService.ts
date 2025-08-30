@@ -184,4 +184,50 @@ export class ApiKeyService {
       where: { id: apiKeyId }
     });
   }
+
+  /**
+   * Restore a revoked API key
+   */
+  async restoreApiKey(userId: string, apiKeyId: string): Promise<void> {
+    const apiKey = await prisma.apiKey.findFirst({
+      where: {
+        id: apiKeyId,
+        userId
+      }
+    });
+
+    if (!apiKey) {
+      throw AppErrorClass.notFound('API key not found');
+    }
+
+    await prisma.apiKey.update({
+      where: { id: apiKeyId },
+      data: { isActive: true }
+    });
+  }
+
+  /**
+   * Get API key usage statistics
+   */
+  async getApiKeyUsage(userId: string, apiKeyId: string): Promise<any> {
+    const apiKey = await prisma.apiKey.findFirst({
+      where: {
+        id: apiKeyId,
+        userId
+      }
+    });
+
+    if (!apiKey) {
+      throw AppErrorClass.notFound('API key not found');
+    }
+
+    // For now, return basic usage info
+    // In a real implementation, you'd track usage in a separate table
+    return {
+      totalRequests: 0, // Placeholder
+      monthlyRequests: 0, // Placeholder
+      dailyRequests: 0, // Placeholder
+      lastUsedAt: apiKey.lastUsedAt
+    };
+  }
 }

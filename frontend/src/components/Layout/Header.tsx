@@ -9,7 +9,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
-import { AccountCircle, Logout } from '@mui/icons-material';
+import { AccountCircle, Logout, Dashboard, VpnKey } from '@mui/icons-material';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/router';
 
@@ -43,7 +43,12 @@ const Header: React.FC<HeaderProps> = ({ showAuthButtons = false }) => {
   return (
     <AppBar position="static" elevation={0} sx={{ backgroundColor: 'white', color: 'text.primary' }}>
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+        <Typography 
+          variant="h6" 
+          component="div" 
+          sx={{ flexGrow: 1, fontWeight: 'bold', cursor: 'pointer' }}
+          onClick={() => router.push('/')}
+        >
           Contacts App
         </Typography>
         
@@ -69,6 +74,22 @@ const Header: React.FC<HeaderProps> = ({ showAuthButtons = false }) => {
             <Button
               color="primary"
               variant="outlined"
+              startIcon={<Dashboard />}
+              onClick={() => router.push('/dashboard')}
+            >
+              Dashboard
+            </Button>
+            <Button
+              color="primary"
+              variant="outlined"
+              startIcon={<VpnKey />}
+              onClick={() => router.push('/api-keys')}
+            >
+              API Keys
+            </Button>
+            <Button
+              color="primary"
+              variant="outlined"
               startIcon={<Logout />}
               onClick={handleLogout}
             >
@@ -87,6 +108,14 @@ const Header: React.FC<HeaderProps> = ({ showAuthButtons = false }) => {
             >
               <MenuItem onClick={handleClose}>
                 {user?.firstName || 'User'} {user?.lastName || ''}
+              </MenuItem>
+              <MenuItem onClick={() => { router.push('/dashboard'); handleClose(); }}>
+                <Dashboard sx={{ mr: 1 }} />
+                Dashboard
+              </MenuItem>
+              <MenuItem onClick={() => { router.push('/api-keys'); handleClose(); }}>
+                <VpnKey sx={{ mr: 1 }} />
+                API Keys
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <Logout sx={{ mr: 1 }} />
