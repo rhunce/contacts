@@ -29,6 +29,7 @@ export class ContactHistoryRepository {
               email: true,
               phone: true,
               ownerId: true,
+              externalId: true,
               createdAt: true,
               updatedAt: true
             }

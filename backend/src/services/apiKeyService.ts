@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
-import { AppErrorClass } from '../types';
+import { AppErrorClass } from '../utils/errors';
 
 export interface CreateApiKeyDto {
   name: string;
@@ -25,14 +25,14 @@ export class ApiKeyService {
    * Generate a new API key
    */
   private generateApiKey(): string {
-    return crypto.randomBytes(this.API_KEY_LENGTH).toString('hex');
+    return crypto.randomBytes(ApiKeyService.API_KEY_LENGTH).toString('hex');
   }
 
   /**
    * Hash an API key for storage
    */
   private async hashApiKey(apiKey: string): Promise<string> {
-    return bcrypt.hash(apiKey, this.SALT_ROUNDS);
+    return bcrypt.hash(apiKey, ApiKeyService.SALT_ROUNDS);
   }
 
   /**

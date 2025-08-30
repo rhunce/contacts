@@ -56,4 +56,11 @@ export class AppErrorClass extends Error {
       message
     });
   }
+
+  static unauthorized(message: string = 'Authentication required'): AppErrorClass {
+    return new AppErrorClass({
+      type: ErrorType.UNAUTHORIZED,
+      message
+    });
+  }
 }
