@@ -15,7 +15,8 @@ const mockContact: Contact = {
 
 const mockHandlers = {
   onEdit: jest.fn(),
-  onDelete: jest.fn()
+  onDelete: jest.fn(),
+  onViewHistory: jest.fn()
 };
 
 describe('ContactCard', () => {
@@ -34,7 +35,7 @@ describe('ContactCard', () => {
   it('should call onEdit when edit button is clicked', () => {
     render(<ContactCard contact={mockContact} {...mockHandlers} />);
 
-    const editButton = screen.getByLabelText('Edit contact');
+    const editButton = screen.getByTitle('Edit Contact');
     fireEvent.click(editButton);
 
     expect(mockHandlers.onEdit).toHaveBeenCalledWith(mockContact);
@@ -43,7 +44,7 @@ describe('ContactCard', () => {
   it('should call onDelete when delete button is clicked', () => {
     render(<ContactCard contact={mockContact} {...mockHandlers} />);
 
-    const deleteButton = screen.getByLabelText('Delete contact');
+    const deleteButton = screen.getByTitle('Delete Contact');
     fireEvent.click(deleteButton);
 
     expect(mockHandlers.onDelete).toHaveBeenCalledWith(mockContact);
@@ -77,10 +78,10 @@ describe('ContactCard', () => {
   it('should have proper accessibility attributes', () => {
     render(<ContactCard contact={mockContact} {...mockHandlers} />);
 
-    const editButton = screen.getByLabelText('Edit contact');
-    const deleteButton = screen.getByLabelText('Delete contact');
+    const editButton = screen.getByTitle('Edit Contact');
+    const deleteButton = screen.getByTitle('Delete Contact');
 
-    expect(editButton).toHaveAttribute('aria-label', 'Edit contact');
-    expect(deleteButton).toHaveAttribute('aria-label', 'Delete contact');
+    expect(editButton).toHaveAttribute('title', 'Edit Contact');
+    expect(deleteButton).toHaveAttribute('title', 'Delete Contact');
   });
 });

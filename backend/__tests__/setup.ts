@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import '@jest/globals';
 
 // Global test setup
-beforeAll(async () => {
+global.beforeAll(async () => {
   // Set test environment variables
   process.env.NODE_ENV = 'test';
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5432/contacts_test';
@@ -14,13 +13,13 @@ beforeAll(async () => {
 });
 
 // Global test teardown
-afterAll(async () => {
+global.afterAll(async () => {
   // Clean up any global resources
   // Note: The test database will be destroyed by the CI/CD system
 });
 
 // Clean up after each test
-afterEach(async () => {
+global.afterEach(async () => {
   // This ensures each test starts with a clean slate
   // Individual test files handle their own cleanup
 });
@@ -28,9 +27,9 @@ afterEach(async () => {
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+  log: global.jest.fn(),
+  debug: global.jest.fn(),
+  info: global.jest.fn(),
+  warn: global.jest.fn(),
+  error: global.jest.fn(),
 };

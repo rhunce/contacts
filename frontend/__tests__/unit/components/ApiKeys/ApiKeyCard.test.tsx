@@ -135,6 +135,6 @@ describe('ApiKeyCard', () => {
   it('should display "Never used" when lastUsedAt is null', () => {
     render(<ApiKeyCard apiKey={mockApiKey} {...mockHandlers} />);
 
-    expect(screen.getByText('Never used')).toBeInTheDocument();
+    expect(screen.getByText(/Last used: Never used/)).toBeInTheDocument();
   });
 });
