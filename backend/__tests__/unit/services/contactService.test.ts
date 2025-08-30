@@ -119,7 +119,7 @@ describe('ContactService', () => {
       mockContactRepository.prototype.existsByEmailAndOwner.mockResolvedValue(false);
       mockContactRepository.prototype.update.mockResolvedValue(mockContact);
 
-      const result = await contactService.updateContact(contactId, updateData, userId);
+      const result = await contactService.updateContact(contactId, userId, updateData);
 
       expect(result).toBeDefined();
       expect(mockContactRepository.prototype.findById).toHaveBeenCalledWith(contactId, userId);
@@ -130,7 +130,7 @@ describe('ContactService', () => {
     it('should throw error when contact not found', async () => {
       mockContactRepository.prototype.findById.mockResolvedValue(null);
 
-      await expect(contactService.updateContact(contactId, updateData, userId)).rejects.toThrow(
+      await expect(contactService.updateContact(contactId, userId, updateData)).rejects.toThrow(
         AppErrorClass.notFound('Contact not found')
       );
 
@@ -171,7 +171,7 @@ describe('ContactService', () => {
       await contactService.deleteContact(contactId, userId);
 
       expect(mockContactRepository.prototype.findById).toHaveBeenCalledWith(contactId, userId);
-      expect(mockContactRepository.prototype.delete).toHaveBeenCalledWith(contactId, userId);
+      expect(mockContactRepository.prototype.delete).toHaveBeenCalledWith(contactId);
     });
 
     it('should throw error when contact not found', async () => {

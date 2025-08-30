@@ -2,6 +2,12 @@ import { AuthService } from '../../../src/services/authService';
 import { UserRepository } from '../../../src/repositories/userRepository';
 import { AppErrorClass } from '../../../src/utils/errors';
 
+// Mock bcrypt
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn(),
+  compare: jest.fn()
+}));
+
 // Mock the UserRepository
 jest.mock('../../../src/repositories/userRepository');
 
@@ -34,16 +40,19 @@ describe('AuthService', () => {
     };
 
     it('should create a user successfully', async () => {
+      const bcrypt = require('bcryptjs');
       mockUserRepository.prototype.getUserCount.mockResolvedValue(0);
       mockUserRepository.prototype.create.mockResolvedValue(mockUser);
+      bcrypt.hash.mockResolvedValue('hashedPassword');
 
       const result = await authService.createUser(userData);
 
       expect(result).toEqual(mockUser);
       expect(mockUserRepository.prototype.getUserCount).toHaveBeenCalled();
+      expect(bcrypt.hash).toHaveBeenCalledWith(userData.password, 10);
       expect(mockUserRepository.prototype.create).toHaveBeenCalledWith({
         email: userData.email,
-        password: expect.any(String), // Hashed password
+        password: 'hashedPassword',
         firstName: userData.firstName,
         lastName: userData.lastName
       });
@@ -79,12 +88,15 @@ describe('AuthService', () => {
     };
 
     it('should validate credentials successfully', async () => {
+      const bcrypt = require('bcryptjs');
       mockUserRepository.prototype.findByEmail.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(true);
 
       const result = await authService.validateCredentials(credentials);
 
       expect(result).toEqual(mockUser);
       expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(credentials.email);
+      expect(bcrypt.compare).toHaveBeenCalledWith(credentials.password, mockUser.password);
     });
 
     it('should return null for invalid email', async () => {
@@ -97,7 +109,9 @@ describe('AuthService', () => {
     });
 
     it('should return null for invalid password', async () => {
+      const bcrypt = require('bcryptjs');
       mockUserRepository.prototype.findByEmail.mockResolvedValue(mockUser);
+      bcrypt.compare.mockResolvedValue(false);
 
       const result = await authService.validateCredentials({
         ...credentials,
@@ -106,6 +120,7 @@ describe('AuthService', () => {
 
       expect(result).toBeNull();
       expect(mockUserRepository.prototype.findByEmail).toHaveBeenCalledWith(credentials.email);
+      expect(bcrypt.compare).toHaveBeenCalledWith('wrongpassword', mockUser.password);
     });
   });
 

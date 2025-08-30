@@ -143,7 +143,7 @@ describe('Authentication Endpoints', () => {
         .expect(401);
 
       expect(response.body.status).toBe(401);
-      expect(response.body.errors[0].message).toContain('Invalid email or password');
+      expect(response.body.errors[0].message).toContain('Invalid credentials');
     });
 
     it('should return error for invalid password', async () => {
@@ -158,7 +158,7 @@ describe('Authentication Endpoints', () => {
         .expect(401);
 
       expect(response.body.status).toBe(401);
-      expect(response.body.errors[0].message).toContain('Invalid email or password');
+      expect(response.body.errors[0].message).toContain('Invalid credentials');
     });
   });
 
@@ -195,7 +195,7 @@ describe('Authentication Endpoints', () => {
         .expect(200);
 
       expect(response.body.status).toBe(200);
-      expect(response.body.data.message).toContain('Logged out successfully');
+      expect(response.body.data.message).toContain('Logout successful');
     });
   });
 

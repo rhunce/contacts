@@ -78,7 +78,7 @@ describe('API End-to-End Tests', () => {
       const createdContacts = [];
       for (const contact of contacts) {
         const createResponse = await request(app)
-          .post('/api/contact')
+          .post('/contact')
           .set('Cookie', authCookie)
           .send(contact)
           .expect(201);
@@ -90,7 +90,7 @@ describe('API End-to-End Tests', () => {
 
       // 5. Get all contacts
       const getContactsResponse = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -106,7 +106,7 @@ describe('API End-to-End Tests', () => {
       };
 
       const updateResponse = await request(app)
-        .put(`/api/contact/${contactToUpdate.id}`)
+        .put(`/contact/${contactToUpdate.id}`)
         .set('Cookie', authCookie)
         .send(updateData)
         .expect(200);
@@ -170,7 +170,7 @@ describe('API End-to-End Tests', () => {
       // 12. Delete a contact
       const contactToDelete = createdContacts[1];
       const deleteResponse = await request(app)
-        .delete(`/api/contact/${contactToDelete.id}`)
+        .delete(`/contact/${contactToDelete.id}`)
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -178,7 +178,7 @@ describe('API End-to-End Tests', () => {
 
       // 13. Verify contact count decreased
       const finalContactsResponse = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -206,7 +206,7 @@ describe('API End-to-End Tests', () => {
     it('should handle authentication errors properly', async () => {
       // Try to access protected endpoint without authentication
       const response = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .expect(401);
 
       expect(response.body.status).toBe(401);
@@ -253,7 +253,7 @@ describe('API End-to-End Tests', () => {
 
       // Try to access non-existent contact
       const response = await request(app)
-        .get('/api/contact/non-existent-id')
+        .get('/contact/non-existent-id')
         .set('Cookie', authCookie)
         .expect(404);
 
@@ -318,14 +318,14 @@ describe('API End-to-End Tests', () => {
 
       // First contact should succeed
       await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(201);
 
       // Second contact with same email should fail
       const response = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(409);
