@@ -186,4 +186,7 @@ async function startServer() {
   }
 }
 
-startServer();
+// Only start the server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
