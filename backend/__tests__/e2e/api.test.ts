@@ -32,7 +32,7 @@ describe('API End-to-End Tests', () => {
       };
 
       const registerResponse = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(201);
 
@@ -41,7 +41,7 @@ describe('API End-to-End Tests', () => {
 
       // 2. Login the user
       const loginResponse = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send({
           email: userData.email,
           password: userData.password
@@ -53,7 +53,7 @@ describe('API End-to-End Tests', () => {
 
       // 3. Verify user can access protected endpoint
       const meResponse = await request(app)
-        .get('/api/auth/me')
+        .get('/me')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -185,8 +185,8 @@ describe('API End-to-End Tests', () => {
       expect(finalContactsResponse.body.data.contacts).toHaveLength(1);
 
       // 14. Logout
-      const logoutResponse = await request(app)
-        .post('/api/auth/logout')
+      const logoutResponse =       await request(app)
+        .post('/logout')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -194,7 +194,7 @@ describe('API End-to-End Tests', () => {
 
       // 15. Verify user can no longer access protected endpoints
       const failedMeResponse = await request(app)
-        .get('/api/auth/me')
+        .get('/me')
         .set('Cookie', authCookie)
         .expect(401);
 
@@ -216,7 +216,7 @@ describe('API End-to-End Tests', () => {
     it('should handle validation errors properly', async () => {
       // Try to register with invalid email
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send({
           email: 'invalid-email',
           password: 'password123',
@@ -239,11 +239,11 @@ describe('API End-to-End Tests', () => {
       };
 
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData);
 
       const loginResponse = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send({
           email: userData.email,
           password: userData.password
@@ -273,13 +273,13 @@ describe('API End-to-End Tests', () => {
 
       // First registration should succeed
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(201);
 
       // Second registration with same email should fail
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData)
         .expect(409);
 
@@ -297,11 +297,11 @@ describe('API End-to-End Tests', () => {
       };
 
       await request(app)
-        .post('/api/auth/register')
+        .post('/register')
         .send(userData);
 
       const loginResponse = await request(app)
-        .post('/api/auth/login')
+        .post('/login')
         .send({
           email: userData.email,
           password: userData.password
