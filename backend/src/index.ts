@@ -77,8 +77,10 @@ app.get('/health', (req, res) => {
 // 8) Start the server with proper session configuration, then mount routes
 async function startServer() {
   try {
-    // Ensure DB is migrated/seeded as your helper dictates
-    await initializeDatabase();
+    // Ensure DB is migrated/seeded as your helper dictates (only in non-test environments)
+    if (process.env.NODE_ENV !== 'test') {
+      await initializeDatabase();
+    }
 
     // --- Build session options once ---
     const baseSessionOptions: session.SessionOptions = {
