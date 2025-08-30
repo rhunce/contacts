@@ -1,11 +1,14 @@
 import { ContactService } from '../../../src/services/contactService';
 import { ContactRepository } from '../../../src/repositories/contactRepository';
+import { ContactHistoryRepository } from '../../../src/repositories/contactHistoryRepository';
 import { AppErrorClass } from '../../../src/utils/errors';
 
-// Mock the ContactRepository
+// Mock the repositories
 jest.mock('../../../src/repositories/contactRepository');
+jest.mock('../../../src/repositories/contactHistoryRepository');
 
 const mockContactRepository = ContactRepository as jest.MockedClass<typeof ContactRepository>;
+const mockContactHistoryRepository = ContactHistoryRepository as jest.MockedClass<typeof ContactHistoryRepository>;
 
 describe('ContactService', () => {
   let contactService: ContactService;
@@ -87,10 +90,10 @@ describe('ContactService', () => {
     const userId = 'user-123';
     const contactId = 'contact-123';
     const updateData = {
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@example.com',
-      phone: '987-654-3210'
+      firstName: 'Jane Updated',
+      lastName: 'Smith Updated',
+      email: 'jane.updated@example.com',
+      phone: '111-222-3333'
     };
 
     const mockContact = {
@@ -115,26 +118,37 @@ describe('ContactService', () => {
     };
 
     it('should update a contact successfully', async () => {
-      mockContactRepository.prototype.findById.mockResolvedValue(mockContact);
+      const updatedContact = { ...mockContact, ...updateData };
+      mockContactRepository.prototype.findByIdForUpdate.mockResolvedValue(mockContact);
       mockContactRepository.prototype.existsByEmailAndOwner.mockResolvedValue(false);
-      mockContactRepository.prototype.update.mockResolvedValue(mockContact);
+      mockContactRepository.prototype.update.mockResolvedValue(updatedContact);
+      mockContactHistoryRepository.prototype.createWithTransaction.mockResolvedValue({
+        id: 'history-123',
+        contactId: contactId,
+        firstName: { before: mockContact.firstName, after: updateData.firstName },
+        lastName: { before: mockContact.lastName, after: updateData.lastName },
+        email: { before: mockContact.email, after: updateData.email },
+        phone: { before: mockContact.phone, after: updateData.phone },
+        createdAt: new Date()
+      });
 
       const result = await contactService.updateContact(contactId, userId, updateData);
 
       expect(result).toBeDefined();
-      expect(mockContactRepository.prototype.findById).toHaveBeenCalledWith(contactId, userId);
+      expect(mockContactRepository.prototype.findByIdForUpdate).toHaveBeenCalledWith(contactId, userId);
       expect(mockContactRepository.prototype.existsByEmailAndOwner).toHaveBeenCalledWith(updateData.email, userId, contactId);
       expect(mockContactRepository.prototype.update).toHaveBeenCalled();
+      expect(mockContactHistoryRepository.prototype.createWithTransaction).toHaveBeenCalled();
     });
 
     it('should throw error when contact not found', async () => {
-      mockContactRepository.prototype.findById.mockResolvedValue(null);
+      mockContactRepository.prototype.findByIdForUpdate.mockResolvedValue(null);
 
       await expect(contactService.updateContact(contactId, userId, updateData)).rejects.toThrow(
         AppErrorClass.notFound('Contact not found')
       );
 
-      expect(mockContactRepository.prototype.findById).toHaveBeenCalledWith(contactId, userId);
+      expect(mockContactRepository.prototype.findByIdForUpdate).toHaveBeenCalledWith(contactId, userId);
       expect(mockContactRepository.prototype.update).not.toHaveBeenCalled();
     });
   });

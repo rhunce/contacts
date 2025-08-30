@@ -45,7 +45,7 @@ describe('Contacts Endpoints', () => {
     authCookie = loginResponse.headers['set-cookie'][0];
   });
 
-  describe('POST /api/contact', () => {
+  describe('POST /contact', () => {
     it('should create a contact successfully', async () => {
       const contactData = {
         firstName: 'Jane',
@@ -55,7 +55,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(201);
@@ -79,14 +79,14 @@ describe('Contacts Endpoints', () => {
 
       // Create first contact
       await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(201);
 
       // Try to create second contact with same email
       const response = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(409);
@@ -104,7 +104,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData)
         .expect(400);
@@ -122,7 +122,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const response = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .send(contactData)
         .expect(401);
 
@@ -130,7 +130,7 @@ describe('Contacts Endpoints', () => {
     });
   });
 
-  describe('GET /api/contact', () => {
+  describe('GET /contact', () => {
     beforeEach(async () => {
       // Create some test contacts
       const contacts = [
@@ -150,7 +150,7 @@ describe('Contacts Endpoints', () => {
 
       for (const contact of contacts) {
         await request(app)
-          .post('/api/contact')
+          .post('/contact')
           .set('Cookie', authCookie)
           .send(contact);
       }
@@ -158,7 +158,7 @@ describe('Contacts Endpoints', () => {
 
     it('should return user contacts', async () => {
       const response = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -170,14 +170,14 @@ describe('Contacts Endpoints', () => {
 
     it('should require authentication', async () => {
       const response = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .expect(401);
 
       expect(response.body.status).toBe(401);
     });
   });
 
-  describe('PUT /api/contact/:id', () => {
+  describe('PUT /contact/:id', () => {
     let contactId: string;
 
     beforeEach(async () => {
@@ -190,7 +190,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const createResponse = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData);
 
@@ -206,7 +206,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const response = await request(app)
-        .put(`/api/contact/${contactId}`)
+        .put(`/contact/${contactId}`)
         .set('Cookie', authCookie)
         .send(updateData)
         .expect(200);
@@ -228,7 +228,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const response = await request(app)
-        .put('/api/contact/non-existent-id')
+        .put('/contact/non-existent-id')
         .set('Cookie', authCookie)
         .send(updateData)
         .expect(404);
@@ -238,7 +238,7 @@ describe('Contacts Endpoints', () => {
     });
   });
 
-  describe('DELETE /api/contact/:id', () => {
+  describe('DELETE /contact/:id', () => {
     let contactId: string;
 
     beforeEach(async () => {
@@ -251,7 +251,7 @@ describe('Contacts Endpoints', () => {
       };
 
       const createResponse = await request(app)
-        .post('/api/contact')
+        .post('/contact')
         .set('Cookie', authCookie)
         .send(contactData);
 
@@ -260,7 +260,7 @@ describe('Contacts Endpoints', () => {
 
     it('should delete a contact successfully', async () => {
       const response = await request(app)
-        .delete(`/api/contact/${contactId}`)
+        .delete(`/contact/${contactId}`)
         .set('Cookie', authCookie)
         .expect(200);
 
@@ -269,7 +269,7 @@ describe('Contacts Endpoints', () => {
 
       // Verify contact is deleted
       const getResponse = await request(app)
-        .get('/api/contact')
+        .get('/contact')
         .set('Cookie', authCookie);
 
       expect(getResponse.body.data.contacts).toHaveLength(0);
@@ -277,7 +277,7 @@ describe('Contacts Endpoints', () => {
 
     it('should return error for non-existent contact', async () => {
       const response = await request(app)
-        .delete('/api/contact/non-existent-id')
+        .delete('/contact/non-existent-id')
         .set('Cookie', authCookie)
         .expect(404);
 

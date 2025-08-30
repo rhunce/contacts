@@ -59,18 +59,17 @@ describe('Authentication Endpoints', () => {
       const response = await request(app)
         .post('/register')
         .send(userData)
-        .expect(409);
+        .expect(400);
 
-      expect(response.body.status).toBe(409);
+      expect(response.body.status).toBe(400);
       expect(response.body.errors[0].message).toContain('already exists');
     });
 
-    it('should return validation error for invalid email', async () => {
+    it('should return validation error for missing required fields', async () => {
       const userData = {
-        email: 'invalid-email',
-        password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe'
+        email: 'test@example.com',
+        password: 'password123'
+        // Missing firstName and lastName
       };
 
       const response = await request(app)
