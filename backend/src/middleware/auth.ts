@@ -3,13 +3,12 @@ import { AuthenticatedRequest, CustomSession } from '../types';
 
 export const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const session = req.session as CustomSession;
+  
   if (!session.userId) {
-    return res.unauthorized();
+    return res.unauthorized('Authentication required');
   }
-  next();
-};
-
-export const optionalAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  // This middleware doesn't block the request, just adds user info if available
+  
+  req.userId = session.userId;
+  
   next();
 };

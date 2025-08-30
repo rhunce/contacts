@@ -1,19 +1,15 @@
 import { Router, Response } from 'express';
 import { ContactHistoryService } from '../services/contactHistoryService';
-import { AuthenticatedRequest, CustomSession } from '../types';
+import { AuthenticatedRequest } from '../types';
 import { PaginationQueryDto } from '../dtos/shared/pagination.dto';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 const contactHistoryService = new ContactHistoryService();
 
 // GET /contact-history/:id - Get contact history with pagination
-router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const session = req.session as CustomSession;
-    if (!session.userId) {
-      return res.unauthorized();
-    }
-
     const { id } = req.params;
     const { page = '1', pageSize = '10', order = 'desc' } = req.query as PaginationQueryDto;
     const pageNum = parseInt(page);
@@ -21,7 +17,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response) => {
 
     const result = await contactHistoryService.getContactHistory(
       id,
-      session.userId,
+      req.userId!,
       pageNum,
       pageSizeNum,
       order as 'asc' | 'desc'

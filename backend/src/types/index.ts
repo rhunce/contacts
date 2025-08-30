@@ -2,6 +2,7 @@ import { Request } from 'express';
 import { Session } from 'express-session';
 
 export interface AuthenticatedRequest extends Request {
+  userId?: string;
   user?: {
     id: string;
     email: string;

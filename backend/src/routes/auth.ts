@@ -1,21 +1,16 @@
 import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/authService';
 import { LoginRequestDto } from '../dtos/external/user.dto';
-import { CustomSession } from '../types';
+import { CustomSession, AuthenticatedRequest } from '../types';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 const authService = new AuthService();
 
 // GET /me - Get current user
-router.get('/me', async (req: Request, res: Response) => {
+router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const session = req.session as CustomSession;
-    
-    if (!session.userId) {
-      return res.unauthorized('Not authenticated');
-    }
-
-    const user = await authService.getUserById(session.userId);
+    const user = await authService.getUserById(req.userId!);
     if (!user) {
       return res.unauthorized('User not found');
     }

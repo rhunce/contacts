@@ -18,7 +18,8 @@ import externalContactRoutes from './routes/externalContacts';
 
 // SSE Event Manager
 import { SSEEventManager } from './services/sseEventManager';
-import { CustomSession } from './types';
+import { CustomSession, AuthenticatedRequest } from './types';
+import { requireAuth } from './middleware/auth';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -134,13 +135,8 @@ async function startServer() {
     // 10) SSE endpoint for real-time updates
     const sseEventManager = SSEEventManager.getInstance();
     
-    app.get('/api/events', (req, res) => {
-      const session = req.session as CustomSession;
-      if (!session.userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      sseEventManager.addClient(session.userId, res);
+    app.get('/api/events', requireAuth, (req: AuthenticatedRequest, res) => {
+      sseEventManager.addClient(req.userId!, res);
       return; // Explicit return for TypeScript
     });
 
