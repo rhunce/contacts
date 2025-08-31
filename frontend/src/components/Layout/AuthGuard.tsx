@@ -1,7 +1,7 @@
-import React from 'react';
-import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { useRouter } from 'next/router';
+import React from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -51,10 +51,6 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
 
   // Don't render children if auth requirements aren't met
   if (requireAuth && !user) {
-    return null;
-  }
-
-  if (!requireAuth && user) {
     return null;
   }
 

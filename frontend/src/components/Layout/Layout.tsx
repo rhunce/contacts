@@ -1,7 +1,7 @@
-import React from 'react';
-import { Box, Container } from '@mui/material';
-import Header from './Header';
 import { useAuth } from '@/hooks/useAuth';
+import { Box, Container } from '@mui/material';
+import React from 'react';
+import Header from './Header';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,8 +9,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, showAuthButtons = false }) => {
-  const { user } = useAuth();
-
+  
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       <Header showAuthButtons={showAuthButtons} />

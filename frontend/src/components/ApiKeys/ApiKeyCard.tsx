@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import { ApiKey } from '@/types/apiKey';
+import { MoreVert } from '@mui/icons-material';
 import {
+  Alert,
+  Box,
   Card,
   CardContent,
-  Box,
-  Typography,
   Chip,
   IconButton,
   Menu,
   MenuItem,
-  Alert,
-  Button,
+  Typography
 } from '@mui/material';
-import { MoreVert, Warning } from '@mui/icons-material';
-import { ApiKey } from '@/types/apiKey';
+import React, { useState } from 'react';
 
 interface ApiKeyCardProps {
   apiKey: ApiKey;

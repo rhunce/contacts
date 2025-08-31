@@ -1,21 +1,21 @@
-import React from 'react';
+import { Contact } from '@/types/contact';
 import {
-  Card,
-  CardContent,
-  Typography,
-  IconButton,
-  Box,
-  Chip,
-  Avatar,
-} from '@mui/material';
-import {
-  Edit,
   Delete,
-  History,
+  Edit,
   Email,
+  History,
   Phone,
 } from '@mui/icons-material';
-import { Contact } from '@/types/contact';
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import React from 'react';
 
 interface ContactCardProps {
   contact: Contact;

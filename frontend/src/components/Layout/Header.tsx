@@ -1,17 +1,17 @@
-import React from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Dashboard, Logout, VpnKey } from '@mui/icons-material';
 import {
   AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  Box,
   Avatar,
+  Box,
+  Button,
   Menu,
   MenuItem,
+  Toolbar,
+  Typography,
 } from '@mui/material';
-import { AccountCircle, Logout, Dashboard, VpnKey } from '@mui/icons-material';
-import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/router';
+import React from 'react';
 
 interface HeaderProps {
   showAuthButtons?: boolean;

@@ -1,14 +1,14 @@
-import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  CircularProgress,
-} from '@mui/material';
 import { Contact } from '@/types/contact';
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
+import React from 'react';
 
 interface DeleteContactModalProps {
   open: boolean;

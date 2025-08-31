@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
+import { CreateApiKeyRequest } from '@/types/apiKey';
+import { Close, Info } from '@mui/icons-material';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
   Alert,
   Box,
-  Typography,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   IconButton,
+  TextField,
+  Typography,
 } from '@mui/material';
-import { Close, Info } from '@mui/icons-material';
-import { CreateApiKeyRequest } from '@/types/apiKey';
+import React, { useState } from 'react';
 
 interface CreateApiKeyModalProps {
   onClose: () => void;
-  onSubmit: (data: CreateApiKeyRequest) => void;
+  onSubmit: (data: CreateApiKeyRequest) => Promise<void>;
 }
 
 const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
