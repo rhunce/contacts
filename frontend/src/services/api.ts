@@ -7,11 +7,6 @@ const API_BASE_URL =
     ? '' // force providing env in build; empty means misconfig will fail loudly
     : 'http://localhost:3000');
 
-// Log the API URL for debugging
-if (typeof window !== 'undefined') {
-  console.log('API Base URL:', API_BASE_URL);
-}
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -21,16 +16,16 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
-// Request interceptor to add auth headers if needed
-api.interceptors.request.use(
-  (config) => {
-    // Add any request logging or headers here
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Use to add/modify headers, logging, or make any other request modifications
+// api.interceptors.request.use(
+//   (config) => {
+//     // Add any request logging, headers, or modifications here
+//     return config;
+//   },
+//   (error) => {
+//     return Promise.reject(error);
+//   }
+// );
 
 // Response interceptor to handle errors
 api.interceptors.response.use(

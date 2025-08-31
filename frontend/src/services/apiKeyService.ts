@@ -1,10 +1,10 @@
+import { ApiKey, ApiKeyResponse, CreateApiKeyRequest } from '@/types/apiKey';
 import api from './api';
-import { ApiKey, CreateApiKeyRequest, ApiKeyResponse } from '@/types/apiKey';
 
 export const apiKeyService = {
   async getApiKeys(): Promise<ApiKey[]> {
     const response = await api.get('/api/keys');
-    return response.data.data || response.data;
+    return response.data.data;
   },
 
   async createApiKey(data: CreateApiKeyRequest): Promise<ApiKeyResponse> {
@@ -22,10 +22,5 @@ export const apiKeyService = {
 
   async restoreApiKey(id: string): Promise<void> {
     await api.post(`/api/keys/${id}/restore`);
-  },
-
-  async updateApiKey(id: string, data: Partial<CreateApiKeyRequest>): Promise<ApiKey> {
-    const response = await api.patch(`/api/keys/${id}`, data);
-    return response.data;
   }
 };

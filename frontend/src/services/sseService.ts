@@ -1,5 +1,3 @@
-import { Contact } from '@/types/contact';
-
 export interface SSEEvent {
   type: string;
   data: any;

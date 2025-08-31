@@ -1,5 +1,5 @@
+import { Contact, ContactListResponse, CreateContactRequest, UpdateContactRequest } from '@/types/contact';
 import api from './api';
-import { Contact, CreateContactRequest, UpdateContactRequest, ContactListResponse } from '@/types/contact';
 
 export const contactService = {
   async getContacts(page = 1, limit = 20, filter?: string): Promise<ContactListResponse> {
