@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import Layout from '@/components/Layout/Layout';
+import { useAuth } from '@/hooks/useAuth';
 import {
-  Box,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Link,
   Alert,
+  Box,
+  Button,
   CircularProgress,
   Grid,
+  Link,
+  Paper,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/hooks/useAuth';
-import Layout from '@/components/Layout/Layout';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 
 const RegisterPage: React.FC = () => {
@@ -25,7 +25,7 @@ const RegisterPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const { register } = useAuth();
   const router = useRouter();
 
@@ -35,7 +35,7 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;

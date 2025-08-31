@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from 'react-query';
 import { contactService } from '@/services/contactService';
-import { sseService, SSEEvent } from '@/services/sseService';
+import { SSEEvent, sseService } from '@/services/sseService';
 import { Contact, CreateContactRequest, UpdateContactRequest } from '@/types/contact';
+import { useCallback, useEffect } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from 'react-query';
 
 export const useContacts = (filter?: string) => {
   const queryClient = useQueryClient();

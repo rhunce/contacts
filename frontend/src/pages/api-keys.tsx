@@ -1,33 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Card,
-  CardContent,
-  Grid,
-  CircularProgress,
-  Alert,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-} from '@mui/material';
-import { Add, VpnKey, CheckCircle, Warning, Search, Close, ContentCopy } from '@mui/icons-material';
+import ApiKeyCard from '@/components/ApiKeys/ApiKeyCard';
+import CreateApiKeyModal from '@/components/ApiKeys/CreateApiKeyModal';
+import AuthGuard from '@/components/Layout/AuthGuard';
+import Layout from '@/components/Layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { apiKeyService } from '@/services/apiKeyService';
 import { ApiKey } from '@/types/apiKey';
-import Layout from '@/components/Layout/Layout';
-import AuthGuard from '@/components/Layout/AuthGuard';
-import ApiKeyCard from '@/components/ApiKeys/ApiKeyCard';
-import CreateApiKeyModal from '@/components/ApiKeys/CreateApiKeyModal';
+import { Add, CheckCircle, Close, ContentCopy, Search, VpnKey, Warning } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography
+} from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 const ApiKeysPage: React.FC = () => {
@@ -64,11 +63,11 @@ const ApiKeysPage: React.FC = () => {
       const response = await apiKeyService.createApiKey(data);
       setApiKeys(prev => [response.info, ...prev]);
       setShowCreateModal(false);
-      
+
       // Store the API key and show it in a modal
       setNewApiKey(response.apiKey);
       setShowKeyModal(true);
-      
+
       toast.success('API key created successfully!');
     } catch (error: any) {
       console.error('Error creating API key:', error);
@@ -79,7 +78,7 @@ const ApiKeysPage: React.FC = () => {
   const handleRevokeApiKey = async (id: string) => {
     try {
       await apiKeyService.revokeApiKey(id);
-      setApiKeys(prev => prev.map(key => 
+      setApiKeys(prev => prev.map(key =>
         key.id === id ? { ...key, isActive: false } : key
       ));
       toast.success('API key revoked successfully');
@@ -107,7 +106,7 @@ const ApiKeysPage: React.FC = () => {
   const handleRestoreApiKey = async (id: string) => {
     try {
       await apiKeyService.restoreApiKey(id);
-      setApiKeys(prev => prev.map(key => 
+      setApiKeys(prev => prev.map(key =>
         key.id === id ? { ...key, isActive: true } : key
       ));
       toast.success('API key restored successfully');
@@ -119,10 +118,10 @@ const ApiKeysPage: React.FC = () => {
 
   const filteredApiKeys = apiKeys.filter(key => {
     const matchesSearch = key.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || 
+    const matchesStatus = filterStatus === 'all' ||
       (filterStatus === 'active' && key.isActive) ||
       (filterStatus === 'revoked' && !key.isActive);
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -263,7 +262,7 @@ const ApiKeysPage: React.FC = () => {
                 No API keys found
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {searchTerm || filterStatus !== 'all' 
+                {searchTerm || filterStatus !== 'all'
                   ? 'Try adjusting your search or filter criteria.'
                   : 'Get started by creating your first API key.'
                 }
@@ -319,11 +318,11 @@ const ApiKeysPage: React.FC = () => {
               <DialogContent>
                 <Alert severity="warning" sx={{ mb: 3 }}>
                   <Typography variant="body2">
-                    <strong>Important:</strong> This is the only time you&apos;ll see this API key. 
+                    <strong>Important:</strong> This is the only time you&apos;ll see this API key.
                     Make sure to copy it and store it securely.
                   </Typography>
                 </Alert>
-                
+
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     API Key:

@@ -1,15 +1,13 @@
-import React from 'react';
-import { Box, Typography, Button, Container, Paper } from '@mui/material';
-import { useRouter } from 'next/router';
-import { useAuth } from '@/hooks/useAuth';
 import Layout from '@/components/Layout/Layout';
-import { Person, Email, Phone } from '@mui/icons-material';
+import { useAuth } from '@/hooks/useAuth';
+import { Email, Person, Phone } from '@mui/icons-material';
+import { Box, Button, Container, Paper, Typography } from '@mui/material';
+import { useRouter } from 'next/router';
+import React from 'react';
 
 const HomePage: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
-
-  console.log('HomePage: Component rendered, current path:', router.pathname, 'user:', user);
 
   React.useEffect(() => {
     if (user) {
@@ -55,15 +53,15 @@ const HomePage: React.FC = () => {
                 <Person sx={{ fontSize: 40 }} />
               </Box>
             </Box>
-            
+
             <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
               Welcome to Contacts
             </Typography>
-            
+
             <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
               Manage your contacts with ease and efficiency
             </Typography>
-            
+
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Email />
@@ -75,7 +73,7 @@ const HomePage: React.FC = () => {
               </Box>
             </Box>
           </Paper>
-          
+
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Button
               variant="contained"

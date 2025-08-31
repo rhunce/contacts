@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
+import Layout from '@/components/Layout/Layout';
+import { useAuth } from '@/hooks/useAuth';
 import {
+  Alert,
   Box,
+  Button,
+  CircularProgress,
+  Link,
   Paper,
   TextField,
-  Button,
   Typography,
-  Link,
-  Alert,
-  CircularProgress,
 } from '@mui/material';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/hooks/useAuth';
-import Layout from '@/components/Layout/Layout';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 
 const LoginPage: React.FC = () => {
@@ -19,11 +19,9 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const { login } = useAuth();
   const router = useRouter();
-
-  console.log('LoginPage: Component rendered, current path:', router.pathname);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

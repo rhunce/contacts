@@ -1,26 +1,25 @@
-import React, { useState, useEffect, Fragment } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Chip,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import { Add, FilterList } from '@mui/icons-material';
-import { useRouter } from 'next/router';
-import { useAuth } from '@/hooks/useAuth';
-import { useContacts } from '@/hooks/useContacts';
-import Layout from '@/components/Layout/Layout';
-import AuthGuard from '@/components/Layout/AuthGuard';
-import ContactCard from '@/components/Contacts/ContactCard';
 import AddContactModal from '@/components/Contacts/AddContactModal';
+import ContactCard from '@/components/Contacts/ContactCard';
 import DeleteContactModal from '@/components/Contacts/DeleteContactModal';
 import EditContactModal from '@/components/Contacts/EditContactModal';
+import AuthGuard from '@/components/Layout/AuthGuard';
+import Layout from '@/components/Layout/Layout';
+import { useContacts } from '@/hooks/useContacts';
 import { Contact } from '@/types/contact';
-import toast from 'react-hot-toast';
 import { getMaxContactsPerUser } from '@/utils/limits';
+import { Add } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Grid,
+  Typography,
+} from '@mui/material';
+import { useRouter } from 'next/router';
+import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const DashboardPage: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -28,10 +27,9 @@ const DashboardPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  
-  const { user } = useAuth();
+
   const router = useRouter();
-  
+
   const {
     contacts,
     isLoading,
@@ -60,7 +58,7 @@ const DashboardPage: React.FC = () => {
 
   const handleEditContact = async (contactData: any) => {
     if (!selectedContact) return;
-    
+
     try {
       await updateContact({ id: selectedContact.id, data: contactData });
       setShowEditModal(false);
@@ -73,7 +71,7 @@ const DashboardPage: React.FC = () => {
 
   const handleDeleteContact = async () => {
     if (!selectedContact) return;
-    
+
     try {
       await deleteContact(selectedContact.id);
       setShowDeleteModal(false);
@@ -89,15 +87,15 @@ const DashboardPage: React.FC = () => {
   return (
     <AuthGuard requireAuth={true}>
       <Layout>
-              <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 4 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Box>
               <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
                 My Contacts
               </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {contacts?.length || 0} of {getMaxContactsPerUser()} contacts
-            </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {contacts?.length || 0} of {getMaxContactsPerUser()} contacts
+              </Typography>
             </Box>
             <Button
               variant="contained"
@@ -109,146 +107,146 @@ const DashboardPage: React.FC = () => {
               Add Contact
             </Button>
           </Box>
-          
+
           {/* Contact limit warnings */}
           {(contacts?.length || 0) >= (getMaxContactsPerUser() * 0.9) && (contacts?.length || 0) < getMaxContactsPerUser() && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               You&apos;re approaching the contact limit. You have {getMaxContactsPerUser() - (contacts?.length || 0)} contacts remaining.
             </Alert>
           )}
-          
+
           {(contacts?.length || 0) >= getMaxContactsPerUser() && (
             <Alert severity="error" sx={{ mb: 2 }}>
               You have reached the maximum limit of {getMaxContactsPerUser()} contacts. Please delete some contacts before adding new ones.
             </Alert>
           )}
 
-        {/* Alphabet Filters */}
-        <div style={{ marginBottom: 24, overflowX: 'auto' }}>
-          <div style={{ display: 'flex', gap: 8, minWidth: 'max-content' }}>
-            {alphabetFilters.map((filter) => (
-              <Chip
-                key={filter}
-                label={filter === 'all' ? 'All' : filter}
-                onClick={() => setSelectedFilter(filter)}
-                color={selectedFilter === filter ? 'primary' : 'default'}
-                variant={selectedFilter === filter ? 'filled' : 'outlined'}
-                sx={{ cursor: 'pointer' }}
-              />
-            ))}
-          </div>
-        </div>
-
-        {error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            Failed to load contacts
-          </Alert>
-        ) : null}
-
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : !contacts || contacts.length === 0 || contacts.every(contact => !contact) ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              py: 8,
-              textAlign: 'center',
-            }}
-          >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No contacts found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {selectedFilter === 'all' 
-                ? 'Get started by adding your first contact'
-                : `No contacts found starting with "${selectedFilter}"`
-              }
-            </Typography>
-            {selectedFilter === 'all' && (
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => setShowAddModal(true)}
-                sx={{ mt: 2 }}
-              >
-                Add Your First Contact
-              </Button>
-            )}
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              maxHeight: '70vh',
-              overflowY: 'auto',
-              pr: 1,
-            }}
-          >
-            <Grid container spacing={3}>
-              {contacts?.filter(contact => contact && contact.id).map((contact) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={contact.id}>
-                  <ContactCard
-                    contact={contact}
-                    onEdit={(contact) => {
-                      setSelectedContact(contact);
-                      setShowEditModal(true);
-                    }}
-                    onDelete={(contact) => {
-                      setSelectedContact(contact);
-                      setShowDeleteModal(true);
-                    }}
-                    onViewHistory={(contact) => {
-                      if (contact?.id) {
-                        router.push(`/contact-history/${contact.id}`);
-                      }
-                    }}
-                  />
-                </Grid>
+          {/* Alphabet Filters */}
+          <div style={{ marginBottom: 24, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', gap: 8, minWidth: 'max-content' }}>
+              {alphabetFilters.map((filter) => (
+                <Chip
+                  key={filter}
+                  label={filter === 'all' ? 'All' : filter}
+                  onClick={() => setSelectedFilter(filter)}
+                  color={selectedFilter === filter ? 'primary' : 'default'}
+                  variant={selectedFilter === filter ? 'filled' : 'outlined'}
+                  sx={{ cursor: 'pointer' }}
+                />
               ))}
-            </Grid>
-            
-            {isFetchingNextPage && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                <CircularProgress />
-              </Box>
-            )}
-          </Box>
-        )}
-      </Box>
+            </div>
+          </div>
 
-      {/* Modals */}
-      <AddContactModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={handleAddContact}
-        loading={isCreating}
-      />
+          {error ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              Failed to load contacts
+            </Alert>
+          ) : null}
 
-      <EditContactModal
-        open={showEditModal}
-        contact={selectedContact}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedContact(null);
-        }}
-        onSubmit={handleEditContact}
-        loading={isUpdating}
-      />
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : !contacts || contacts.length === 0 || contacts.every(contact => !contact) ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 8,
+                textAlign: 'center',
+              }}
+            >
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No contacts found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedFilter === 'all'
+                  ? 'Get started by adding your first contact'
+                  : `No contacts found starting with "${selectedFilter}"`
+                }
+              </Typography>
+              {selectedFilter === 'all' && (
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => setShowAddModal(true)}
+                  sx={{ mt: 2 }}
+                >
+                  Add Your First Contact
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                maxHeight: '70vh',
+                overflowY: 'auto',
+                pr: 1,
+              }}
+            >
+              <Grid container spacing={3}>
+                {contacts?.filter(contact => contact && contact.id).map((contact) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={contact.id}>
+                    <ContactCard
+                      contact={contact}
+                      onEdit={(contact) => {
+                        setSelectedContact(contact);
+                        setShowEditModal(true);
+                      }}
+                      onDelete={(contact) => {
+                        setSelectedContact(contact);
+                        setShowDeleteModal(true);
+                      }}
+                      onViewHistory={(contact) => {
+                        if (contact?.id) {
+                          router.push(`/contact-history/${contact.id}`);
+                        }
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
 
-      <DeleteContactModal
-        open={showDeleteModal}
-        contact={selectedContact}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setSelectedContact(null);
-        }}
-        onConfirm={handleDeleteContact}
-        loading={isDeleting}
-      />
+              {isFetchingNextPage && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress />
+                </Box>
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Modals */}
+        <AddContactModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSubmit={handleAddContact}
+          loading={isCreating}
+        />
+
+        <EditContactModal
+          open={showEditModal}
+          contact={selectedContact}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedContact(null);
+          }}
+          onSubmit={handleEditContact}
+          loading={isUpdating}
+        />
+
+        <DeleteContactModal
+          open={showDeleteModal}
+          contact={selectedContact}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedContact(null);
+          }}
+          onConfirm={handleDeleteContact}
+          loading={isDeleting}
+        />
       </Layout>
     </AuthGuard>
   );
