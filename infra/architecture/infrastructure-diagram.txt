@@ -1,0 +1,92 @@
+Contacts Application Infrastructure Diagram
+==========================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              INTERNET                                       │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ROUTE 53                                         │
+│                      (DNS Resolution)                                       │
+│                    api.contactfolio.com                                       │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    APPLICATION LOAD BALANCER                                │
+│                    (HTTPS:443, HTTP:80)                                     │
+│                    Health Check: /health                                    │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                VPC                                          │
+│                    (172.16.0.0/16)                                          │
+│                                                                             │
+│  ┌─────────────────┬─────────────────┬─────────────────────────────────┐    │
+│  │   PUBLIC SUBNET │ PRIVATE SUBNET  │      ISOLATED SUBNET            │    │
+│  │   (Internet)    │  (NAT Gateway)  │      (No Internet)              │    │
+│  │                 │                 │                                 │    │
+│  │   [ALB]         │  [ECS FARGATE]  │   [AURORA POSTGRESQL]           │    │
+│  │   Port 80/443   │  [BACKEND API]  │   [Database Cluster]            │    │
+│  │                 │  Port 3000      │   [Serverless v2]               │    │
+│  │                 │  Node.js/TS     │   [0.5-2 ACUs]                  │    │
+│  │                 │  Express.js     │                                 │    │
+│  │                 │                 │   [ELASTICACHE REDIS]           │    │
+│  │                 │  [Prisma ORM]   │   [Session Storage]             │    │
+│  │                 │  [Connect-Redis]│   [Port 6379]                   │    │
+│  └─────────────────┴─────────────────┴─────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+SECURITY GROUPS & NETWORKING
+============================
+• ALB Security Group: Allows HTTP/HTTPS from Internet
+• ECS Security Group: Allows traffic from ALB, connects to DB & Redis
+• Database Security Group: Allows PostgreSQL (5432) from ECS only
+• Redis Security Group: Allows Redis (6379) from ECS only
+
+ENVIRONMENT VARIABLES
+====================
+• PORT: 3000
+• NODE_ENV: production
+• CORS_ORIGIN: https://contactfolio.com
+• MAX_USERS: 50
+• MAX_CONTACTS_PER_USER: 50
+• PGDATABASE: postgres
+
+SECRETS (from AWS Secrets Manager)
+==================================
+• PGHOST: Database host
+• PGPORT: Database port
+• PGUSER: Database username
+• PGPASSWORD: Database password
+• SESSION_SECRET: Express.js session secret
+• REDIS_URL: Redis connection string (rediss://...)
+
+SERVICES & TECHNOLOGIES
+=======================
+• ECS Fargate: Container orchestration
+• Aurora PostgreSQL: Managed database
+• ElastiCache Redis: Session storage
+• Application Load Balancer: Traffic distribution
+• Route 53: DNS management
+• ACM: SSL certificate management
+• Secrets Manager: Credential storage
+• VPC: Network isolation
+
+DEPLOYMENT FLOW
+===============
+1. GitHub Actions triggers on push to main/master
+2. CDK synthesizes CloudFormation templates
+3. Backend stack deploys first (VPC, RDS, Redis, ECS)
+4. Frontend stack deploys second (S3, CloudFront)
+5. Frontend builds and deploys to S3
+6. CloudFront cache invalidated
+
+COST OPTIMIZATION
+=================
+• Aurora Serverless v2: Scales from 0.5 to 2 ACUs
+• ECS Fargate: Pay per use, 256 CPU units, 512MB RAM
+• ElastiCache: t3.micro instance
+• Single NAT Gateway: Shared across private subnets

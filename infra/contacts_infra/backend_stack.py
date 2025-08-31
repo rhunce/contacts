@@ -14,9 +14,7 @@ from aws_cdk import (
     aws_elasticache as elasticache,
     aws_secretsmanager as secretsmanager,
     aws_route53 as route53,
-    aws_route53_targets as targets,
     aws_certificatemanager as acm,
-    aws_iam as iam,
     aws_elasticloadbalancingv2 as elbv2
 )
 from constructs import Construct
