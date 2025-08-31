@@ -16,6 +16,7 @@ env:
   APP_NAME: ${{ vars.APP_NAME }}
   NODE_ENV: ${{ vars.NODE_ENV }}
   ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
+  FRONTEND_SUBDOMAIN: ${{ vars.FRONTEND_SUBDOMAIN }}
   MAX_USERS: ${{ vars.MAX_USERS }}
   MAX_CONTACTS_PER_USER: ${{ vars.MAX_CONTACTS_PER_USER }}
 
