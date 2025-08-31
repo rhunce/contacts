@@ -1,5 +1,5 @@
-import { ErrorType, AppError } from '@/types/errors';
-import { getMaxUsers, getMaxContactsPerUser } from './limits';
+import { ErrorType } from '@/types/errors';
+import { getMaxContactsPerUser, getMaxUsers } from './limits';
 
 export function getErrorType(error: any): ErrorType | null {
   // Check if it's a structured error from our backend
