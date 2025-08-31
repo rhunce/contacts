@@ -84,15 +84,4 @@ export function getErrorMessage(error: any): string {
   }
 }
 
-export function isLimitError(error: any): boolean {
-  const errorType = getErrorType(error);
-  return errorType === ErrorType.USER_LIMIT_REACHED || errorType === ErrorType.CONTACT_LIMIT_REACHED;
-}
 
-export function isDuplicateEmailError(error: any): boolean {
-  return getErrorType(error) === ErrorType.DUPLICATE_EMAIL;
-}
-
-export function isTimeoutError(error: any): boolean {
-  return getErrorType(error) === ErrorType.TIMEOUT_ERROR;
-}
