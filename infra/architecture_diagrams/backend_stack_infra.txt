@@ -9,7 +9,7 @@ Contacts Application Infrastructure Diagram
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                            ROUTE 53                                         │
 │                      (DNS Resolution)                                       │
-│                    api.contactfolio.com                                       │
+│                    api.contactfolio.com                                     │
 └─────────────────────────────┬───────────────────────────────────────────────┘
                               │
                               ▼

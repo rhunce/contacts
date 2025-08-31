@@ -3,7 +3,6 @@ Frontend Infrastructure Stack
 AWS CDK Python implementation for frontend hosting
 """
 
-import os
 from typing import Optional
 from aws_cdk import (
     Stack, RemovalPolicy, CfnOutput,
@@ -13,7 +12,6 @@ from aws_cdk import (
     aws_route53 as route53,
     aws_route53_targets as targets,
     aws_certificatemanager as acm,
-    aws_iam as iam
 )
 from constructs import Construct
 

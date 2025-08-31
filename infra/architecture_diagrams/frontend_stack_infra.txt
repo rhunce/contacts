@@ -1,0 +1,155 @@
+Frontend Infrastructure Stack Diagram
+=====================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              INTERNET                                       │
+│                        (User Browser)                                       │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ROUTE 53                                         │
+│                      (DNS Resolution)                                       │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  A Record: www.contactfolio.com → CloudFront Distribution           │    │
+│  │  AAAA Record: www.contactfolio.com → CloudFront Distribution        │    │
+│  │  A Record: contactfolio.com → CloudFront Distribution               │    │
+│  │  AAAA Record: contactfolio.com → CloudFront Distribution            │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CLOUDFRONT CDN                                       │
+│                    (Global Edge Network)                                    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Distribution Configuration:                                        │    │
+│  │  • Default Root Object: index.html                                  │    │
+│  │  • Viewer Protocol: Redirect HTTP → HTTPS                           │    │
+│  │  • Cache Policy: Caching Optimized                                  │    │
+│  │  • Origin Request Policy: CORS S3 Origin                            │    │
+│  │  • Error Responses: 404/403 → index.html (SPA Routing)              │    │
+│  │  • SSL Certificate: ACM (us-east-1)                                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        S3 BUCKET                                            │
+│                    (Static File Storage)                                    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Bucket Configuration:                                              │    │
+│  │  • Name: contacts-frontend-{account-id}                             │    │
+│  │  • Access: Private (CloudFront Only)                                │    │
+│  │  • Encryption: S3 Managed                                           │    │
+│  │  • CORS: Enabled for API calls                                      │    │
+│  │  • Versioning: Disabled                                             │    │
+│  │  • Lifecycle: Auto-delete on stack destroy                          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────┬───────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ORIGIN ACCESS IDENTITY                                   │
+│                    (OAI - Security Layer)                                   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Security Configuration:                                            │    │
+│  │  • CloudFront can read S3 bucket                                    │    │
+│  │  • S3 bucket blocks all public access                               │    │
+│  │  • Secure connection between CloudFront and S3                      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+DEPLOYMENT FLOW
+===============
+1. GitHub Actions triggers on push to main/master
+2. CDK deploys FrontendStack (creates infrastructure)
+3. Next.js builds static files (frontend/out/)
+4. S3 sync uploads files to bucket
+5. CloudFront invalidation clears cache
+6. Users access via custom domain
+
+BUILD PROCESS
+=============
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Next.js App   │ →  │   npm run build │ →  │  Static Files   │
+│   (TypeScript)  │    │   (Compilation) │    │  (HTML/CSS/JS)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              ↓
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Environment    │ →  │  Build Output   │ →  │   S3 Upload     │
+│  Variables      │    │  (frontend/out/)│    │  (aws s3 sync)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+ENVIRONMENT VARIABLES (Build Time)
+==================================
+• NEXT_PUBLIC_API_URL: https://api.contactfolio.com
+• NEXT_PUBLIC_MAX_USERS: 50
+• NEXT_PUBLIC_MAX_CONTACTS_PER_USER: 50
+
+DOMAIN CONFIGURATION
+====================
+• Root Domain: contactfolio.com
+• Frontend Subdomain: www
+• Frontend URL: https://www.contactfolio.com
+• Apex Domain: https://contactfolio.com (also supported)
+• SSL Certificate: ACM (us-east-1 region required for CloudFront)
+
+SECURITY FEATURES
+=================
+• HTTPS Only: All HTTP requests redirected to HTTPS
+• Private S3 Bucket: No direct public access
+• Origin Access Identity: Secure CloudFront → S3 connection
+• CORS Configuration: Allows API calls from frontend
+• SSL Certificate: Domain-validated certificate
+• Block Public Access: S3 bucket blocks all public access
+
+PERFORMANCE OPTIMIZATION
+========================
+• Global CDN: 200+ CloudFront edge locations
+• Caching Optimized: Static assets cached at edge
+• Compression: Automatic gzip compression
+• SPA Routing: 404/403 errors serve index.html
+• Origin Request Policy: Optimized for S3 origins
+
+CACHE INVALIDATION
+==================
+• Trigger: After S3 upload
+• Command: aws cloudfront create-invalidation
+• Paths: /* (all files)
+• Effect: Users see updated version immediately
+
+COST OPTIMIZATION
+=================
+• S3: Pay only for storage and requests
+• CloudFront: Pay for data transfer out
+• No compute costs (static hosting)
+• No database costs (frontend only)
+• Global distribution included in CloudFront pricing
+
+INTEGRATION POINTS
+==================
+• Backend API: NEXT_PUBLIC_API_URL environment variable
+• DNS: Route53 hosted zone for custom domain
+• SSL: ACM certificate for HTTPS
+• Deployment: GitHub Actions workflow
+• Monitoring: CloudFront access logs (optional)
+
+ERROR HANDLING
+==============
+• 404 Errors: Serve index.html (SPA routing)
+• 403 Errors: Serve index.html (SPA routing)
+• SSL Errors: Automatic redirect to HTTPS
+• DNS Errors: Fallback to CloudFront domain
+• Cache Miss: Fetch from S3 origin
+
+MONITORING & LOGGING
+====================
+• CloudFront Access Logs: User requests and performance
+• S3 Access Logs: Origin requests (optional)
+• Route53 Health Checks: DNS resolution monitoring
+• ACM Certificate: SSL certificate expiration monitoring
