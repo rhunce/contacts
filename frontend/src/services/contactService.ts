@@ -18,7 +18,6 @@ export const contactService = {
 
   async getContact(id: string): Promise<Contact> {
     const response = await api.get(`/contact/${id}`);
-    console.log('API response for contact:', response.data);
     return response.data;
   },
 
@@ -40,6 +39,6 @@ export const contactService = {
 
   async getContactHistory(id: string): Promise<any[]> {
     const response = await api.get(`/contact-history/${id}`);
-    return response.data.items;
+    return response.data.data;
   },
 };
