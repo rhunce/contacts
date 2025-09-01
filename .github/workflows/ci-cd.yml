@@ -53,14 +53,7 @@ jobs:
       working-directory: ./backend
       run: npm ci --include=dev
     
-    - name: Run backend tests
-      working-directory: ./backend
-      run: npm test
-      env:
-        NODE_ENV: test
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/contacts_test
-    
-    - name: Generate test coverage
+    - name: Run backend tests with coverage
       working-directory: ./backend
       run: npm run test:coverage
       env:
