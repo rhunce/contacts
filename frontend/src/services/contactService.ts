@@ -58,8 +58,23 @@ export const contactService = {
     await api.delete(`/contact/${id}`);
   },
 
-  async getContactHistory(id: string): Promise<any[]> {
-    const response = await api.get(`/contact-history/${id}`);
-    return response.data.data.items; // Extract items from paginated response
+  async getContactHistory(id: string, page = 1, pageSize = 20, order: 'asc' | 'desc' = 'desc'): Promise<any> {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        order: order
+      });
+      
+      const response = await api.get(`/contact-history/${id}?${params.toString()}`);
+      return response.data;
+    } catch (error: any) {
+      const customMessages = {
+        404: 'Contact not found',
+        422: 'Please check your pagination parameters and try again'
+      };
+      
+      throw ApiErrorHandler.createError(error, customMessages);
+    }
   },
 };

@@ -25,6 +25,13 @@ const ContactHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20); // Show 20 entries per page
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const { user } = useAuth();
   const router = useRouter();
   const { id } = router.query;
@@ -40,15 +47,40 @@ const ContactHistoryPage: React.FC = () => {
       setLoading(true);
       const [contactData, historyData] = await Promise.all([
         contactService.getContact(contactId),
-        contactService.getContactHistory(contactId),
+        contactService.getContactHistory(contactId, 1, pageSize, 'desc'),
       ]);
       setContact(contactData);
-      setHistory(historyData || []);
+
+      // Extract items from paginated response
+      setHistory(historyData?.data?.items || []);
+      setTotalPages(historyData?.pagination?.totalPages || 1);
+      setTotalItems(historyData?.pagination?.total || 0);
+      setCurrentPage(1);
     } catch (error: any) {
       setError(error.message || 'Failed to load contact history');
       toast.error(error.message || 'Failed to load contact history');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreHistory = async () => {
+    if (!id || typeof id !== 'string' || currentPage >= totalPages || loadingMore) {
+      return;
+    }
+
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+      const historyData = await contactService.getContactHistory(id, nextPage, pageSize, 'desc');
+
+      // Append new items to existing history
+      setHistory(prev => [...prev, ...(historyData?.data?.items || [])]);
+      setCurrentPage(nextPage);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load more history');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -116,7 +148,7 @@ const ContactHistoryPage: React.FC = () => {
 
               {/* History List */}
               <Typography variant="h6" component="h3" sx={{ mb: 2 }}>
-                History ({history.length} entries)
+                History ({totalItems} total entries)
               </Typography>
 
               {history.length === 0 ? (
@@ -184,6 +216,33 @@ const ContactHistoryPage: React.FC = () => {
                       </Card>
                     );
                   })}
+                </Box>
+
+              )}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Showing {history.length} of {totalItems} entries
+                  </Typography>
+
+                  {currentPage < totalPages && (
+                    <Button
+                      variant="outlined"
+                      onClick={loadMoreHistory}
+                      disabled={loadingMore}
+                      startIcon={loadingMore ? <CircularProgress size={16} /> : null}
+                    >
+                      {loadingMore ? 'Loading...' : 'Load More'}
+                    </Button>
+                  )}
+
+                  {currentPage > 1 && (
+                    <Typography variant="body2" color="text.secondary">
+                      Page {currentPage} of {totalPages}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </>
