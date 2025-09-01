@@ -66,6 +66,7 @@ model ApiKey {
   id          String   @id @default(uuid())
   userId      String
   name        String   // Human-readable name for the API key
+  keyPrefix   String   // First 8 characters of the API key for fast lookup
   keyHash     String   // Hashed API key
   isActive    Boolean  @default(true)
   lastUsedAt  DateTime?
@@ -78,5 +79,6 @@ model ApiKey {
   @@unique([userId, name])
   @@index([userId])
   @@index([keyHash])
+  @@index([keyPrefix])
   @@map("api_keys")
 }

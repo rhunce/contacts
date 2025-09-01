@@ -53,8 +53,9 @@ export class ApiKeyService {
       throw AppErrorClass.validationError('API key with this name already exists', 'name');
     }
 
-    // Generate new API key
+    // Generate new API key and derive prefix for fast lookup
     const apiKey = this.generateApiKey();
+    const keyPrefix = apiKey.substring(0, 8);
     const keyHash = await this.hashApiKey(apiKey);
 
     // Create API key record
@@ -62,6 +63,7 @@ export class ApiKeyService {
       data: {
         userId,
         name: data.name,
+        keyPrefix,
         keyHash,
         expiresAt: data.expiresAt
       }
@@ -83,9 +85,11 @@ export class ApiKeyService {
    * Validate an API key and return user ID
    */
   async validateApiKey(apiKey: string): Promise<string> {
-    // Get all active API keys that haven't expired
-    const apiKeyRecords = await prisma.apiKey.findMany({
+    // Extract prefix and lookup a single record
+    const keyPrefix = apiKey.substring(0, 8);
+    const apiKeyRecord = await prisma.apiKey.findFirst({
       where: {
+        keyPrefix,
         isActive: true,
         OR: [
           { expiresAt: null },
@@ -94,21 +98,21 @@ export class ApiKeyService {
       }
     });
 
-    // Check each API key against the provided key
-    for (const apiKeyRecord of apiKeyRecords) {
-      const isValid = await bcrypt.compare(apiKey, apiKeyRecord.keyHash);
-      if (isValid) {
-        // Update last used timestamp
-        await prisma.apiKey.update({
-          where: { id: apiKeyRecord.id },
-          data: { lastUsedAt: new Date() }
-        });
-
-        return apiKeyRecord.userId;
-      }
+    if (!apiKeyRecord) {
+      throw AppErrorClass.unauthorized('Invalid API key');
     }
 
-    throw AppErrorClass.unauthorized('Invalid API key');
+    const isValid = await bcrypt.compare(apiKey, apiKeyRecord.keyHash);
+    if (!isValid) {
+      throw AppErrorClass.unauthorized('Invalid API key');
+    }
+
+    await prisma.apiKey.update({
+      where: { id: apiKeyRecord.id },
+      data: { lastUsedAt: new Date() }
+    });
+
+    return apiKeyRecord.userId;
   }
 
   /**
