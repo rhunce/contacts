@@ -1,44 +1,13 @@
-import { Response, Router } from 'express';
-import { PaginationQueryDto, validatePaginationParams } from '../dtos/shared/pagination.dto';
+import { Router } from 'express';
+import { ContactHistoryController } from '../controllers/contactHistoryController';
 import { requireAuth } from '../middleware/auth';
-import { ContactHistoryService } from '../services/contactHistoryService';
-import { AuthenticatedRequest } from '../types';
+import { validateParams, validateQuery } from '../middleware/validation';
+import { contactHistoryIdSchema, getContactHistorySchema } from '../schemas/contactHistorySchemas';
 
 const router = Router();
-const contactHistoryService = new ContactHistoryService();
+const contactHistoryController = new ContactHistoryController();
 
 // GET /contact-history/:id - Get contact history with pagination
-router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { page, pageSize, order = 'desc' } = req.query as PaginationQueryDto;
-    
-    // Validate pagination parameters
-    const { page: pageNum, pageSize: pageSizeNum } = validatePaginationParams(page, pageSize);
-
-    const result = await contactHistoryService.getContactHistory(
-      id,
-      req.userId!,
-      pageNum,
-      pageSizeNum,
-      order as 'asc' | 'desc'
-    );
-
-    res.paginated(result.data, result.pagination);
-  } catch (error: any) {
-    console.error('Error fetching contact history:', error);
-    
-    // Handle pagination validation errors
-    if (error.message.includes('Page must be between') || error.message.includes('Page size must be between')) {
-      return res.validationError([{ message: error.message, field: 'pagination' }]);
-    }
-    
-    if (error.message === 'Contact not found') {
-      return res.notFound('Contact not found');
-    }
-
-    res.error('Internal server error');
-  }
-});
+router.get('/:id', requireAuth, validateParams(contactHistoryIdSchema), validateQuery(getContactHistorySchema), contactHistoryController.getContactHistory);
 
 export default router;
