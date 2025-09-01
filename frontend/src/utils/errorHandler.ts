@@ -2,14 +2,14 @@ import { ErrorType } from '@/types/errors';
 import { getMaxContactsPerUser, getMaxUsers } from './limits';
 
 export function getErrorType(error: any): ErrorType | null {
+  // Check if it's in the errors array first (our backend structure)
+  if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
+    return error.response.data.errors[0].type as ErrorType;
+  }
+  
   // Check if it's a structured error from our backend
   if (error?.response?.data?.type) {
     return error.response.data.type as ErrorType;
-  }
-  
-  // Check if it's in the errors array (our backend structure)
-  if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
-    return error.response.data.errors[0].type as ErrorType;
   }
   
   // Check if it's an AppError instance
