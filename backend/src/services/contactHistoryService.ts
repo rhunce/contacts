@@ -35,10 +35,10 @@ export class ContactHistoryService {
     const internalResult = await this.contactHistoryRepository.findByContactId(contactId, options, order);
     
     // Transform internal DTOs to external DTOs
-    const externalData = internalResult.items.map(history => ContactMapper.toContactHistoryDto(history));
+    const externalData = internalResult.data.map(history => ContactMapper.toContactHistoryDto(history));
     
     return {
-      items: externalData,
+      data: externalData,
       total: internalResult.total,
       pagination: internalResult.pagination
     };

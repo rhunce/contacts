@@ -25,6 +25,7 @@ const ContactHistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const { user } = useAuth();
   const router = useRouter();
   const { id } = router.query;
 

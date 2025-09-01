@@ -1,4 +1,3 @@
-import compression from 'compression';
 import RedisStore from 'connect-redis';
 import cors from 'cors';
 import express from 'express';
@@ -55,21 +54,7 @@ app.use(corsMiddleware);
 
 app.options('*', corsMiddleware);
 
-// 5) Compression middleware (reduces response size by 70-85%)
-app.use(compression({
-  threshold: 1024, // Only compress responses larger than 1KB
-  level: 6, // Compression level (1-9, higher = smaller but slower)
-  filter: (req, res) => {
-    // Don't compress if client doesn't support it
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    // Use default compression filter
-    return compression.filter(req, res);
-  }
-}));
-
-// 6) Rate limiting
+// 5) Rate limiting
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -79,14 +64,14 @@ app.use(
   })
 );
 
-// 7) Body parsers
+// 6) Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// 8) Response interceptor (adds custom response methods for response formatting/standardization)
+// 7) Response interceptor (adds custom response methods for response formatting/standardization)
 app.use(responseInterceptor);
 
-// 9) Start the server with proper session configuration, then mount routes
+// 8) Start the server with proper session configuration, then mount routes
 async function startServer() {
   try {
     // Initialize database
@@ -137,7 +122,7 @@ async function startServer() {
       app.use(session(baseSessionOptions));
     }
 
-    // 10) Mount API routes AFTER session middleware so req.session is available
+    // 9) Mount API routes AFTER session middleware so req.session is available
     app.use('/', authRoutes);
     app.use('/contact', contactRoutes);
     app.use('/contacts', contactRoutes);
@@ -147,7 +132,7 @@ async function startServer() {
     // Health check
     app.get('/health', (req, res) => res.success({ status: 'OK', timestamp: new Date().toISOString() }));
 
-    // 11) SSE endpoint for real-time updates
+    // 10) SSE endpoint for real-time updates
     const sseEventManager = SSEEventManager.getInstance();
     
     app.get('/api/events', requireAuth, (req: AuthenticatedRequest, res) => {
@@ -155,18 +140,18 @@ async function startServer() {
       return; // Explicit return for TypeScript
     });
 
-    // 12) 404 handler
+    // 11) 404 handler
     app.use('*', (req, res) => {
       res.notFound('Route not found');
     });
 
-    // 13) Error handler
+    // 12) Error handler
     app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
       console.error('Unhandled error:', err);
       res.error('Internal server error');
     });
 
-    // 14) Start server
+    // 13) Start server
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${NODE_ENV}`);

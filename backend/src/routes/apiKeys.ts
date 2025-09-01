@@ -1,25 +1,93 @@
-import { Router } from 'express';
-import { ApiKeyController } from '../controllers/apiKeyController';
+import { Response, Router } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { validateBody, validateParams } from '../middleware/validation';
-import { apiKeyIdSchema, createApiKeySchema } from '../schemas/apiKeySchemas';
+import { ApiKeyService, CreateApiKeyDto } from '../services/apiKeyService';
+import { AuthenticatedRequest, CustomSession } from '../types';
 
 const router = Router();
-const apiKeyController = new ApiKeyController();
+const apiKeyService = new ApiKeyService();
 
 // GET /api/keys - Get all API keys for the authenticated user
-router.get('/', requireAuth, apiKeyController.getApiKeys);
+router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+
+    const apiKeys = await apiKeyService.getUserApiKeys(userId);
+    res.success(apiKeys);
+  } catch (error: any) {
+    console.error('Error fetching API keys:', error);
+    res.appError(error);
+  }
+});
 
 // POST /api/keys - Create a new API key
-router.post('/', requireAuth, validateBody(createApiKeySchema), apiKeyController.createApiKey);
+router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const data: CreateApiKeyDto = req.body;
+
+    // Validate required fields
+    if (!data.name) {
+      return res.validationError([{ message: 'API key name is required', field: 'name' }]);
+    }
+
+    const result = await apiKeyService.createApiKey(userId, data);
+    
+    // Return the API key only once (for security)
+    res.success({
+      apiKey: result.apiKey,
+      info: result.info
+    }, 201);
+  } catch (error: any) {
+    console.error('Error creating API key:', error);
+    res.appError(error);
+  }
+});
 
 // DELETE /api/keys/:id - Revoke an API key
-router.delete('/:id', requireAuth, validateParams(apiKeyIdSchema), apiKeyController.deleteApiKey);
+router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    await apiKeyService.revokeApiKey(userId, id);
+    res.success({ message: 'API key revoked successfully' });
+  } catch (error: any) {
+    console.error('Error revoking API key:', error);
+    res.appError(error);
+  }
+});
 
 // POST /api/keys/:id/restore - Restore a revoked API key
-router.post('/:id/restore', requireAuth, validateParams(apiKeyIdSchema), apiKeyController.restoreApiKey);
+router.post('/:id/restore', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    await apiKeyService.restoreApiKey(userId, id);
+    res.success({ message: 'API key restored successfully' });
+  } catch (error: any) {
+    console.error('Error restoring API key:', error);
+    res.appError(error);
+  }
+});
 
 // DELETE /api/keys/:id/permanent - Permanently delete an API key
-router.delete('/:id/permanent', requireAuth, validateParams(apiKeyIdSchema), apiKeyController.deleteApiKeyPermanent);
+router.delete('/:id/permanent', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const session = req.session as CustomSession;
+    const userId = session.userId!;
+    const { id } = req.params;
+
+    await apiKeyService.deleteApiKey(userId, id);
+    res.success({ message: 'API key permanently deleted' });
+  } catch (error: any) {
+    console.error('Error deleting API key:', error);
+    res.appError(error);
+  }
+});
 
 export default router;

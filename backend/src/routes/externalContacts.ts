@@ -1,29 +1,110 @@
-import { Router } from 'express';
-import { ExternalContactController } from '../controllers/externalContactController';
-import { validateBody, validateParams, validateQuery } from '../middleware/validation';
-import {
-  contactIdSchema,
-  createContactSchema,
-  getContactsSchema,
-  updateContactSchema
-} from '../schemas/contactSchemas';
+import { Response, Router } from 'express';
+import { CreateContactDto, UpdateContactDto } from '../dtos/external/contact.dto';
+import { ApiKeyRequest, requireApiKey } from '../middleware/apiKeyAuth';
+import { ContactService } from '../services/contactService';
 
 const router = Router();
-const externalContactController = new ExternalContactController();
+const contactService = new ContactService();
 
-// GET /api/external/contact - Get contacts
-router.get('/', validateQuery(getContactsSchema), externalContactController.getContacts);
+// Apply API key authentication to all external contact routes
+router.use(requireApiKey);
 
-// GET /api/external/contact/:id - Get specific contact
-router.get('/:id', validateParams(contactIdSchema), externalContactController.getContact);
+// GET /api/external/contact/:externalId - Get contact by external ID
+router.get('/:externalId', async (req: ApiKeyRequest, res: Response) => {
+  try {
+    const { externalId } = req.params;
+    const userId = req.apiKeyUserId;
 
-// POST /api/external/contact - Create contact
-router.post('/', validateBody(createContactSchema), externalContactController.createContact);
+    if (!userId) {
+      return res.unauthorized('API key authentication required');
+    }
 
-// PATCH /api/external/contact/:id - Update contact
-router.patch('/:id', validateParams(contactIdSchema), validateBody(updateContactSchema), externalContactController.updateContact);
+    const contact = await contactService.getContactByExternalId(externalId, userId);
 
-// DELETE /api/external/contact/:id - Delete contact
-router.delete('/:id', validateParams(contactIdSchema), externalContactController.deleteContact);
+    if (!contact) {
+      return res.notFound('Contact not found');
+    }
+
+    res.success(contact);
+  } catch (error: any) {
+    console.error('Error fetching external contact:', error);
+    res.appError(error);
+  }
+});
+
+// PATCH /api/external/contact/:externalId - Update contact by external ID
+router.patch('/:externalId', async (req: ApiKeyRequest, res: Response) => {
+  try {
+    const { externalId } = req.params;
+    const userId = req.apiKeyUserId;
+    const updateData: UpdateContactDto = req.body;
+
+    if (!userId) {
+      return res.unauthorized('API key authentication required');
+    }
+
+    const updatedContact = await contactService.updateContactByExternalId(externalId, userId, updateData);
+
+    res.success(updatedContact);
+  } catch (error: any) {
+    console.error('Error updating external contact:', error);
+    res.appError(error);
+  }
+});
+
+// POST /api/external/contact - Create contact with external ID
+router.post('/', async (req: ApiKeyRequest, res: Response) => {
+  try {
+    const userId = req.apiKeyUserId;
+    const { firstName, lastName, email, phone, externalId }: CreateContactDto & { externalId?: string } = req.body;
+
+    if (!userId) {
+      return res.unauthorized('API key authentication required');
+    }
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone) {
+      const errors = [];
+      if (!firstName) errors.push({ message: 'First name is required', field: 'firstName' });
+      if (!lastName) errors.push({ message: 'Last name is required', field: 'lastName' });
+      if (!email) errors.push({ message: 'Email is required', field: 'email' });
+      if (!phone) errors.push({ message: 'Phone is required', field: 'phone' });
+      
+      return res.validationError(errors);
+    }
+
+    const contact = await contactService.createContactWithExternalId({
+      firstName,
+      lastName,
+      email,
+      phone,
+      externalId
+    }, userId);
+
+    res.success(contact, 201);
+  } catch (error: any) {
+    console.error('Error creating external contact:', error);
+    res.appError(error);
+  }
+});
+
+// DELETE /api/external/contact/:externalId - Delete contact by external ID
+router.delete('/:externalId', async (req: ApiKeyRequest, res: Response) => {
+  try {
+    const { externalId } = req.params;
+    const userId = req.apiKeyUserId;
+
+    if (!userId) {
+      return res.unauthorized('API key authentication required');
+    }
+
+    const contact = await contactService.deleteContactByExternalId(externalId, userId);
+
+    res.success(contact);
+  } catch (error: any) {
+    console.error('Error deleting external contact:', error);
+    res.appError(error);
+  }
+});
 
 export default router;

@@ -15,7 +15,7 @@ export interface PaginationOptionsDto {
 }
 
 export interface PaginationResultDto<T> {
-  items: T[];
+  data: T[];
   total: number;
   pagination: {
     page: number;

@@ -18,37 +18,20 @@ export const contactService = {
 
   async getContact(id: string): Promise<Contact> {
     const response = await api.get(`/contact/${id}`);
+    console.log('API response for contact:', response.data);
     return response.data;
   },
 
   async createContact(contactData: CreateContactRequest): Promise<Contact> {
-    try {
-      const response = await api.post('/contact', contactData, {
-        timeout: 30000, // 30 second timeout for contact creation (20s delay + buffer)
-      });
-      return response.data;
-    } catch (error: any) {
-      // Extract error message from API response
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        const firstError = error.response.data.errors[0];
-        throw new Error(firstError.message);
-      }
-      throw error;
-    }
+    const response = await api.post('/contact', contactData, {
+      timeout: 30000, // 30 second timeout for contact creation (20s delay + buffer)
+    });
+    return response.data;
   },
 
   async updateContact(id: string, contactData: UpdateContactRequest): Promise<Contact> {
-    try {
-      const response = await api.patch(`/contact/${id}`, contactData);
-      return response.data;
-    } catch (error: any) {
-      // Extract error message from API response
-      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
-        const firstError = error.response.data.errors[0];
-        throw new Error(firstError.message);
-      }
-      throw error;
-    }
+    const response = await api.patch(`/contact/${id}`, contactData);
+    return response.data;
   },
 
   async deleteContact(id: string): Promise<void> {
@@ -57,6 +40,6 @@ export const contactService = {
 
   async getContactHistory(id: string): Promise<any[]> {
     const response = await api.get(`/contact-history/${id}`);
-    return response.data.data;
+    return response.data.data.items; // Extract items from paginated response
   },
 };

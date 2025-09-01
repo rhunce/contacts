@@ -118,7 +118,7 @@ export class ContactRepository {
     ]);
 
     return {
-      items: contacts,
+      data: contacts,
       total,
       pagination: {
         page: options.page,

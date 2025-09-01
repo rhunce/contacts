@@ -1,4 +1,4 @@
-import { Contact, Prisma } from '@prisma/client';
+import { Contact, ContactHistory } from '@prisma/client';
 import { BaseEntityInternalDto } from '../shared/common.dto';
 
 // Internal DTOs - Used between Repository and Service layers
@@ -47,10 +47,10 @@ export interface InternalUpdateContactDto {
 export interface InternalContactHistoryDto {
   id: string;
   contactId: string;
-  firstName?: Prisma.JsonValue;
-  lastName?: Prisma.JsonValue;
-  email?: Prisma.JsonValue;
-  phone?: Prisma.JsonValue;
+  firstName?: any; // JsonValue from Prisma
+  lastName?: any; // JsonValue from Prisma
+  email?: any; // JsonValue from Prisma
+  phone?: any; // JsonValue from Prisma
   createdAt: Date;
   // Note: ContactHistory doesn't have updatedAt in the schema
 }

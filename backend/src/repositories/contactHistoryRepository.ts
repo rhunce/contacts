@@ -26,7 +26,7 @@ export class ContactHistoryRepository {
     ]);
 
     return {
-      items: history,
+      data: history,
       total,
       pagination: {
         page: options.page,
