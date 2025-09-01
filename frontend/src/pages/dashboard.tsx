@@ -65,7 +65,8 @@ const DashboardPage: React.FC = () => {
       setSelectedContact(null);
       toast.success('Contact updated successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update contact');
+      // Let the error propagate to the modal instead of showing a toast
+      throw error;
     }
   };
 

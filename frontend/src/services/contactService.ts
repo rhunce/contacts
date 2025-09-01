@@ -22,15 +22,33 @@ export const contactService = {
   },
 
   async createContact(contactData: CreateContactRequest): Promise<Contact> {
-    const response = await api.post('/contact', contactData, {
-      timeout: 30000, // 30 second timeout for contact creation (20s delay + buffer)
-    });
-    return response.data;
+    try {
+      const response = await api.post('/contact', contactData, {
+        timeout: 30000, // 30 second timeout for contact creation (20s delay + buffer)
+      });
+      return response.data;
+    } catch (error: any) {
+      // Extract error message from API response
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        const firstError = error.response.data.errors[0];
+        throw new Error(firstError.message);
+      }
+      throw error;
+    }
   },
 
   async updateContact(id: string, contactData: UpdateContactRequest): Promise<Contact> {
-    const response = await api.patch(`/contact/${id}`, contactData);
-    return response.data;
+    try {
+      const response = await api.patch(`/contact/${id}`, contactData);
+      return response.data;
+    } catch (error: any) {
+      // Extract error message from API response
+      if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+        const firstError = error.response.data.errors[0];
+        throw new Error(firstError.message);
+      }
+      throw error;
+    }
   },
 
   async deleteContact(id: string): Promise<void> {
