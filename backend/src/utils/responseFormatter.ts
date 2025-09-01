@@ -54,7 +54,7 @@ export class ResponseFormatter {
 
   static validationError(errors: Array<{ type?: ErrorType; message: string; field?: string; code?: string }>): ApiResponse<null> {
     return {
-      status: 400,
+      status: 422,
       data: null,
       errors
     };

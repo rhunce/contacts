@@ -12,6 +12,15 @@ export const authService = {
         throw new Error('Invalid email or password');
       }
       if (error.response?.status === 422) {
+        // Extract validation error messages from the backend
+        const validationErrors = error.response?.data?.errors;
+        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
+          // Use the first validation error message, or combine them
+          const errorMessage = validationErrors.length === 1 
+            ? validationErrors[0].message 
+            : validationErrors.map(err => err.message).join(', ');
+          throw new Error(errorMessage);
+        }
         throw new Error('Please check your input and try again');
       }
       if (error.code === 'ECONNABORTED') {
@@ -31,6 +40,15 @@ export const authService = {
         throw new Error('An account with this email already exists');
       }
       if (error.response?.status === 422) {
+        // Extract validation error messages from the backend
+        const validationErrors = error.response?.data?.errors;
+        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
+          // Use the first validation error message, or combine them
+          const errorMessage = validationErrors.length === 1 
+            ? validationErrors[0].message 
+            : validationErrors.map(err => err.message).join(', ');
+          throw new Error(errorMessage);
+        }
         throw new Error('Please check your input and try again');
       }
       if (error.code === 'ECONNABORTED') {
