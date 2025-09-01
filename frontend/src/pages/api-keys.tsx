@@ -35,6 +35,8 @@ const ApiKeysPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteApiKeyId, setDeleteApiKeyId] = useState<string | null>(null);
   const [newApiKey, setNewApiKey] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'revoked'>('all');
@@ -89,14 +91,19 @@ const ApiKeysPage: React.FC = () => {
   };
 
   const handleDeleteApiKey = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this API key? This action cannot be undone.')) {
-      return;
-    }
+    setDeleteApiKeyId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteApiKey = async () => {
+    if (!deleteApiKeyId) return;
 
     try {
-      await apiKeyService.deleteApiKey(id);
-      setApiKeys(prev => prev.filter(key => key.id !== id));
+      await apiKeyService.deleteApiKey(deleteApiKeyId);
+      setApiKeys(prev => prev.filter(key => key.id !== deleteApiKeyId));
       toast.success('API key deleted successfully');
+      setShowDeleteModal(false);
+      setDeleteApiKeyId(null);
     } catch (error: any) {
       console.error('Error deleting API key:', error);
       toast.error('Failed to delete API key');
@@ -352,6 +359,58 @@ const ApiKeysPage: React.FC = () => {
                 </Button>
                 <Button onClick={() => setShowKeyModal(false)}>
                   Close
+                </Button>
+              </DialogActions>
+            </Dialog>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <Dialog
+              open={showDeleteModal}
+              onClose={() => setShowDeleteModal(false)}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" color="error.main">
+                    ⚠️ Delete API Key Permanently
+                  </Typography>
+                  <IconButton onClick={() => setShowDeleteModal(false)} size="small">
+                    <Close />
+                  </IconButton>
+                </Box>
+              </DialogTitle>
+              <DialogContent>
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    <strong>Warning:</strong> This action cannot be undone. The API key will be permanently deleted and any integrations using it will stop working immediately.
+                  </Typography>
+                </Alert>
+
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  Are you absolutely sure you want to permanently delete this API key?
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  This will immediately revoke access for any applications or services currently using this key.
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button 
+                  onClick={() => setShowDeleteModal(false)}
+                  variant="outlined"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeleteApiKey}
+                  variant="contained"
+                  color="error"
+                  startIcon={<Warning />}
+                >
+                  Delete Permanently
                 </Button>
               </DialogActions>
             </Dialog>

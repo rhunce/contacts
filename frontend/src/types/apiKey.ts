@@ -10,12 +10,6 @@ export interface ApiKey {
 export interface CreateApiKeyRequest {
   name: string;
   expiresAt?: Date;
-  permissions?: {
-    read: boolean;
-    create: boolean;
-    update: boolean;
-    delete: boolean;
-  };
 }
 
 export interface ApiKeyResponse {

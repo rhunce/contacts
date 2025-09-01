@@ -27,13 +27,7 @@ const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    expiresAt: '',
-    permissions: {
-      read: true,
-      create: true,
-      update: true,
-      delete: true
-    }
+    expiresAt: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -49,8 +43,7 @@ const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
     
     try {
       const submitData: CreateApiKeyRequest = {
-        name: formData.name.trim(),
-        permissions: formData.permissions
+        name: formData.name.trim()
       };
 
       if (formData.expiresAt) {
@@ -65,15 +58,7 @@ const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
     }
   };
 
-  const handlePermissionChange = (permission: keyof typeof formData.permissions) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [permission]: !prev.permissions[permission]
-      }
-    }));
-  };
+
 
   return (
     <Dialog
@@ -116,23 +101,113 @@ const CreateApiKeyModal: React.FC<CreateApiKeyModalProps> = ({
             />
 
             <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Permissions
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {Object.entries(formData.permissions).map(([key, value]) => (
-                  <FormControlLabel
-                    key={key}
-                    control={
-                      <Checkbox
-                        checked={value}
-                        onChange={() => handlePermissionChange(key as keyof typeof formData.permissions)}
-                      />
-                    }
-                    label={`${key.charAt(0).toUpperCase() + key.slice(1)} contacts`}
-                  />
-                ))}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Typography variant="subtitle2">
+                  Permissions
+                </Typography>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    fontStyle: 'italic',
+                    bgcolor: 'grey.100',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1
+                  }}
+                >
+                  Coming soon
+                </Typography>
               </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={true}
+                      disabled={true}
+                      sx={{ 
+                        '&.Mui-disabled': {
+                          color: 'grey.400'
+                        }
+                      }}
+                    />
+                  }
+                  label="Read contacts"
+                  sx={{ 
+                    color: 'text.disabled',
+                    '& .MuiFormControlLabel-label': {
+                      color: 'text.disabled'
+                    }
+                  }}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={true}
+                      disabled={true}
+                      sx={{ 
+                        '&.Mui-disabled': {
+                          color: 'grey.400'
+                        }
+                      }}
+                    />
+                  }
+                  label="Create contacts"
+                  sx={{ 
+                    color: 'text.disabled',
+                    '& .MuiFormControlLabel-label': {
+                      color: 'text.disabled'
+                    }
+                  }}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={true}
+                      disabled={true}
+                      sx={{ 
+                        '&.Mui-disabled': {
+                          color: 'grey.400'
+                        }
+                      }}
+                    />
+                  }
+                  label="Update contacts"
+                  sx={{ 
+                    color: 'text.disabled',
+                    '& .MuiFormControlLabel-label': {
+                      color: 'text.disabled'
+                    }
+                  }}
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={true}
+                      disabled={true}
+                      sx={{ 
+                        '&.Mui-disabled': {
+                          color: 'grey.400'
+                        }
+                      }}
+                    />
+                  }
+                  label="Delete contacts"
+                  sx={{ 
+                    color: 'text.disabled',
+                    '& .MuiFormControlLabel-label': {
+                      color: 'text.disabled'
+                    }
+                  }}
+                />
+              </Box>
+              <Typography 
+                variant="caption" 
+                color="text.secondary" 
+                sx={{ fontStyle: 'italic' }}
+              >
+                All API keys currently have full access to contact operations. Granular permissions will be available in a future update.
+              </Typography>
             </Box>
 
             <Alert severity="info" icon={<Info />}>
