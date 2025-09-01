@@ -1,3 +1,24 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
+
+# Environment files
 .env
+.env.local
+.env.production
+
+# Test coverage reports
+coverage/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
