@@ -15,7 +15,11 @@ export class ContactController {
       const result = await this.contactService.getContacts(req.userId!, Number(page), Number(limit), filter as string);
       res.success(result);
     } catch (error: any) {
-      res.error(error.message);
+      if (error.name === 'AppError') {
+        res.appError(error);
+      } else {
+        res.error(error.message);
+      }
     }
   }
 
@@ -25,7 +29,11 @@ export class ContactController {
       const contact = await this.contactService.getContact(contactId, req.userId!);
       res.success(contact);
     } catch (error: any) {
-      res.error(error.message);
+      if (error.name === 'AppError') {
+        res.appError(error);
+      } else {
+        res.error(error.message);
+      }
     }
   }
 
@@ -34,7 +42,11 @@ export class ContactController {
       const contact = await this.contactService.createContact(req.body, req.userId!);
       res.success(contact);
     } catch (error: any) {
-      res.error(error.message);
+      if (error.name === 'AppError') {
+        res.appError(error);
+      } else {
+        res.error(error.message);
+      }
     }
   }
 
@@ -44,7 +56,11 @@ export class ContactController {
       const contact = await this.contactService.updateContact(contactId, req.userId!, req.body as any);
       res.success(contact);
     } catch (error: any) {
-      res.error(error.message);
+      if (error.name === 'AppError') {
+        res.appError(error);
+      } else {
+        res.error(error.message);
+      }
     }
   }
 
@@ -54,7 +70,11 @@ export class ContactController {
       await this.contactService.deleteContact(contactId, req.userId!);
       res.success({ message: 'Contact deleted successfully' });
     } catch (error: any) {
-      res.error(error.message);
+      if (error.name === 'AppError') {
+        res.appError(error);
+      } else {
+        res.error(error.message);
+      }
     }
   }
 }
