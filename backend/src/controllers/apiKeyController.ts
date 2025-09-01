@@ -29,8 +29,8 @@ export class ApiKeyController {
 
   deleteApiKey = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const apiKeyId = parseInt(req.params.id);
-      await this.apiKeyService.deleteApiKey(req.userId!, apiKeyId.toString());
+      const apiKeyId = req.params.id;
+      await this.apiKeyService.deleteApiKey(req.userId!, apiKeyId);
       res.success({ message: 'API key deleted successfully' });
     } catch (error: any) {
       res.error(error.message);
@@ -39,8 +39,8 @@ export class ApiKeyController {
 
   deleteApiKeyPermanent = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const apiKeyId = parseInt(req.params.id);
-      await this.apiKeyService.deleteApiKey(req.userId!, apiKeyId.toString());
+      const apiKeyId = req.params.id;
+      await this.apiKeyService.deleteApiKey(req.userId!, apiKeyId);
       res.success({ message: 'API key permanently deleted' });
     } catch (error: any) {
       res.error(error.message);
@@ -49,8 +49,8 @@ export class ApiKeyController {
 
   restoreApiKey = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const apiKeyId = parseInt(req.params.id);
-      await this.apiKeyService.restoreApiKey(req.userId!, apiKeyId.toString());
+      const apiKeyId = req.params.id;
+      await this.apiKeyService.restoreApiKey(req.userId!, apiKeyId);
       res.success({ message: 'API key restored successfully' });
     } catch (error: any) {
       res.error(error.message);

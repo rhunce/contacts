@@ -52,7 +52,7 @@ export const authService = {
   async getCurrentUser(): Promise<any> {
     try {
       const response = await api.get('/me');
-      return response.data.data?.user || null;
+      return response.data.user || null;
     } catch (error: any) {
       // Re-throw the error so the auth context can handle it
       throw error;

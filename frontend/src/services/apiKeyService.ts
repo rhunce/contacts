@@ -4,12 +4,12 @@ import api from './api';
 export const apiKeyService = {
   async getApiKeys(): Promise<ApiKey[]> {
     const response = await api.get('/api/keys');
-    return response.data.data;
+    return response.data;
   },
 
   async createApiKey(data: CreateApiKeyRequest): Promise<ApiKeyResponse> {
     const response = await api.post('/api/keys', data);
-    return response.data.data;
+    return response.data;
   },
 
   async revokeApiKey(id: string): Promise<void> {

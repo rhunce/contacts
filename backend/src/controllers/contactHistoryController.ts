@@ -11,7 +11,7 @@ export class ContactHistoryController {
 
   getContactHistory = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const contactId = req.params.contactId;
+      const contactId = req.params.id;
       const { page = 1, limit = 10 } = req.query;
       const result = await this.contactHistoryService.getContactHistory(contactId, req.userId!, Number(page), Number(limit));
       res.success(result);
