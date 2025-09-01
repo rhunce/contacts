@@ -1,5 +1,6 @@
 import { Contact, ContactListResponse, CreateContactRequest, UpdateContactRequest } from '@/types/contact';
 import api from './api';
+import { ApiErrorHandler } from '@/utils/apiErrorHandler';
 
 export const contactService = {
   async getContacts(page = 1, pageSize = 20, filter?: string): Promise<ContactListResponse> {
@@ -29,30 +30,12 @@ export const contactService = {
       });
       return response.data;
     } catch (error: any) {
-      // Handle validation errors
-      if (error.response?.status === 422) {
-        const validationErrors = error.response?.data?.errors;
-        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
-          const errorMessage = validationErrors.length === 1 
-            ? validationErrors[0].message 
-            : validationErrors.map(err => err.message).join(', ');
-          throw new Error(errorMessage);
-        }
-        throw new Error('Please check your input and try again');
-      }
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timed out. Please try again.');
-      }
-      if (error.response?.status === 409) {
-        // Handle conflict errors (like duplicate email)
-        if (error.response?.data?.errors && Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
-          const errorMessage = error.response.data.errors[0].message;
-          throw new Error(errorMessage);
-        }
-        const errorMessage = error.response?.data?.message || 'A conflict occurred. Please check your input and try again.';
-        throw new Error(errorMessage);
-      }
-      throw new Error(error.response?.data?.message || 'Failed to create contact. Please try again.');
+      const customMessages = {
+        409: 'A conflict occurred. Please check your input and try again.',
+        422: 'Please check your input and try again'
+      };
+      
+      throw ApiErrorHandler.createError(error, customMessages);
     }
   },
 
@@ -61,30 +44,13 @@ export const contactService = {
       const response = await api.patch(`/contact/${id}`, contactData);
       return response.data;
     } catch (error: any) {
-      // Handle validation errors
-      if (error.response?.status === 422) {
-        const validationErrors = error.response?.data?.errors;
-        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
-          const errorMessage = validationErrors.length === 1 
-            ? validationErrors[0].message 
-            : validationErrors.map(err => err.message).join(', ');
-          throw new Error(errorMessage);
-        }
-        throw new Error('Please check your input and try again');
-      }
-      if (error.response?.status === 404) {
-        throw new Error('Contact not found');
-      }
-      if (error.response?.status === 409) {
-        // Handle conflict errors (like duplicate email)
-        if (error.response?.data?.errors && Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
-          const errorMessage = error.response.data.errors[0].message;
-          throw new Error(errorMessage);
-        }
-        const errorMessage = error.response?.data?.message || 'A conflict occurred. Please check your input and try again.';
-        throw new Error(errorMessage);
-      }
-      throw new Error(error.response?.data?.message || 'Failed to update contact. Please try again.');
+      const customMessages = {
+        404: 'Contact not found',
+        409: 'A conflict occurred. Please check your input and try again.',
+        422: 'Please check your input and try again'
+      };
+      
+      throw ApiErrorHandler.createError(error, customMessages);
     }
   },
 

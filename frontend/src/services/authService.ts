@@ -1,5 +1,6 @@
 import { AuthResponse, LoginRequest, RegisterRequest } from '@/types/auth';
 import api from './api';
+import { ApiErrorHandler } from '@/utils/apiErrorHandler';
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -7,26 +8,12 @@ export const authService = {
       const response = await api.post('/login', credentials);
       return response.data;
     } catch (error: any) {
-      // Handle specific error cases
-      if (error.response?.status === 401) {
-        throw new Error('Invalid email or password');
-      }
-      if (error.response?.status === 422) {
-        // Extract validation error messages from the backend
-        const validationErrors = error.response?.data?.errors;
-        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
-          // Use the first validation error message, or combine them
-          const errorMessage = validationErrors.length === 1 
-            ? validationErrors[0].message 
-            : validationErrors.map(err => err.message).join(', ');
-          throw new Error(errorMessage);
-        }
-        throw new Error('Please check your input and try again');
-      }
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timed out. Please try again.');
-      }
-      throw new Error(error.response?.data?.message || 'Login failed. Please try again.');
+      const customMessages = {
+        401: 'Invalid email or password',
+        422: 'Please check your input and try again'
+      };
+      
+      throw ApiErrorHandler.createError(error, customMessages);
     }
   },
 
@@ -35,26 +22,12 @@ export const authService = {
       const response = await api.post('/register', userData);
       return response.data;
     } catch (error: any) {
-      // Handle specific error cases
-      if (error.response?.status === 409) {
-        throw new Error('An account with this email already exists');
-      }
-      if (error.response?.status === 422) {
-        // Extract validation error messages from the backend
-        const validationErrors = error.response?.data?.errors;
-        if (validationErrors && Array.isArray(validationErrors) && validationErrors.length > 0) {
-          // Use the first validation error message, or combine them
-          const errorMessage = validationErrors.length === 1 
-            ? validationErrors[0].message 
-            : validationErrors.map(err => err.message).join(', ');
-          throw new Error(errorMessage);
-        }
-        throw new Error('Please check your input and try again');
-      }
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timed out. Please try again.');
-      }
-      throw new Error(error.response?.data?.message || 'Registration failed. Please try again.');
+      const customMessages = {
+        409: 'An account with this email already exists',
+        422: 'Please check your input and try again'
+      };
+      
+      throw ApiErrorHandler.createError(error, customMessages);
     }
   },
 
