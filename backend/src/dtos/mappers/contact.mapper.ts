@@ -11,7 +11,6 @@ import {
   InternalCreateContactDto,
   InternalUpdateContactDto
 } from '../internal/contact.dto';
-import { ContactHistoryChangeDto } from '../shared/common.dto';
 
 // Mapper functions to transform between internal and external DTOs
 
@@ -80,29 +79,19 @@ export class ContactMapper {
       updatedAt: internal.createdAt.toISOString(), // ContactHistory doesn't have updatedAt, use createdAt
     };
 
-    // Helper function to safely convert JsonValue to ContactHistoryChangeDto
-    const convertToChangeDto = (jsonValue: any): ContactHistoryChangeDto | undefined => {
-      if (jsonValue && typeof jsonValue === 'object' && 'before' in jsonValue && 'after' in jsonValue) {
-        return {
-          before: String(jsonValue.before),
-          after: String(jsonValue.after)
-        };
-      }
-      return undefined;
-    };
-
     // Only include fields that actually changed (not null)
-    const firstName = convertToChangeDto(internal.firstName);
-    if (firstName) result.firstName = firstName;
-    
-    const lastName = convertToChangeDto(internal.lastName);
-    if (lastName) result.lastName = lastName;
-    
-    const email = convertToChangeDto(internal.email);
-    if (email) result.email = email;
-    
-    const phone = convertToChangeDto(internal.phone);
-    if (phone) result.phone = phone;
+    if (internal.firstName !== null) {
+      result.firstName = internal.firstName as { before: string; after: string };
+    }
+    if (internal.lastName !== null) {
+      result.lastName = internal.lastName as { before: string; after: string };
+    }
+    if (internal.email !== null) {
+      result.email = internal.email as { before: string; after: string };
+    }
+    if (internal.phone !== null) {
+      result.phone = internal.phone as { before: string; after: string };
+    }
 
     return result;
   }
