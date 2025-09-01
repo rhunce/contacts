@@ -32,6 +32,7 @@ const DashboardPage: React.FC = () => {
 
   const {
     contacts,
+    totalAllContacts,
     isLoading,
     error,
     loadMore,
@@ -95,14 +96,14 @@ const DashboardPage: React.FC = () => {
                 My Contacts
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {contacts?.length || 0} of {getMaxContactsPerUser()} contacts
+                {contacts?.length || 0} of {totalAllContacts} contacts ({getMaxContactsPerUser()} max)
               </Typography>
             </Box>
             <Button
               variant="contained"
               startIcon={<Add />}
               onClick={() => setShowAddModal(true)}
-              disabled={isCreating || (contacts?.length || 0) >= getMaxContactsPerUser()}
+              disabled={isCreating || totalAllContacts >= getMaxContactsPerUser()}
               sx={{ px: 3 }}
             >
               Add Contact
@@ -110,13 +111,13 @@ const DashboardPage: React.FC = () => {
           </Box>
 
           {/* Contact limit warnings */}
-          {(contacts?.length || 0) >= (getMaxContactsPerUser() * 0.9) && (contacts?.length || 0) < getMaxContactsPerUser() && (
+          {totalAllContacts >= (getMaxContactsPerUser() * 0.9) && totalAllContacts < getMaxContactsPerUser() && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              You&apos;re approaching the contact limit. You have {getMaxContactsPerUser() - (contacts?.length || 0)} contacts remaining.
+              You&apos;re approaching the contact limit. You have {getMaxContactsPerUser() - totalAllContacts} contacts remaining.
             </Alert>
           )}
 
-          {(contacts?.length || 0) >= getMaxContactsPerUser() && (
+          {totalAllContacts >= getMaxContactsPerUser() && (
             <Alert severity="error" sx={{ mb: 2 }}>
               You have reached the maximum limit of {getMaxContactsPerUser()} contacts. Please delete some contacts before adding new ones.
             </Alert>
@@ -148,7 +149,7 @@ const DashboardPage: React.FC = () => {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
-          ) : !contacts || contacts.length === 0 || contacts.every(contact => !contact) ? (
+          ) : !contacts || totalAllContacts === 0 || contacts.every(contact => !contact) ? (
             <Box
               sx={{
                 display: 'flex',

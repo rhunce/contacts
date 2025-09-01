@@ -2,7 +2,7 @@ import { contactService } from '@/services/contactService';
 import { SSEEvent, sseService } from '@/services/sseService';
 import { Contact, CreateContactRequest, UpdateContactRequest } from '@/types/contact';
 import { useCallback, useEffect } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from 'react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from 'react-query';
 
 export const useContacts = (filter?: string) => {
   const queryClient = useQueryClient();
@@ -27,6 +27,18 @@ export const useContacts = (filter?: string) => {
       },
     }
   );
+
+  // Get total count of all contacts (unfiltered) for display purposes
+  const { data: totalCountData } = useQuery(
+    ['contacts', 'total'],
+    () => contactService.getContacts(1, 1), // Just get first page to get total count
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    }
+  );
+
+  const totalAllContacts = totalCountData?.data?.pagination?.total || 0;
 
   const createContactMutation = useMutation(
     (contactData: CreateContactRequest) => contactService.createContact(contactData),
@@ -156,6 +168,7 @@ export const useContacts = (filter?: string) => {
 
   return {
     contacts: allContacts,
+    totalAllContacts,
     isLoading,
     error,
     loadMore,
