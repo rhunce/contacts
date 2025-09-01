@@ -40,10 +40,10 @@ export class ContactService {
     const internalResult = await this.contactRepository.findByOwnerId(ownerId, options, filter);
     
     // Transform internal DTOs to external DTOs
-    const externalData = internalResult.data.map(contact => ContactMapper.toContactWithOwnerDto(contact));
+    const externalData = internalResult.items.map(contact => ContactMapper.toContactWithOwnerDto(contact));
     
     return {
-      data: externalData,
+      items: externalData,
       total: internalResult.total,
       pagination: internalResult.pagination
     };
