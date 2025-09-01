@@ -15,7 +15,6 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:deploy": "npm test && npm run build",
-    "prebuild": "npm test",
     "deploy": "./scripts/deploy.sh",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
