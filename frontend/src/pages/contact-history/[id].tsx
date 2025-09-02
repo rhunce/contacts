@@ -53,8 +53,8 @@ const ContactHistoryPage: React.FC = () => {
 
       // Extract items from paginated response
       setHistory(historyData?.data?.items || []);
-      setTotalPages(historyData?.pagination?.totalPages || 1);
-      setTotalItems(historyData?.pagination?.total || 0);
+      setTotalPages(historyData?.data?.pagination?.totalPages || 1);
+      setTotalItems(historyData?.data?.pagination?.total || 0);
       setCurrentPage(1);
     } catch (error: any) {
       setError(error.message || 'Failed to load contact history');
