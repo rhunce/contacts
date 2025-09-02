@@ -64,6 +64,10 @@ app.use(compression({
     if (req.headers['x-no-compression']) {
       return false;
     }
+    // Don't compress SSE responses - they're streaming and can't be compressed
+    if (req.path === '/api/events') {
+      return false;
+    }
     // Use default compression filter
     return compression.filter(req, res);
   }
