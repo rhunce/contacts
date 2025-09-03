@@ -74,11 +74,11 @@ ContactFolio is a full-stack contact management application that provides real-t
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │ CloudFront + S3 │    │   Load Balancer │    │   Redis Cache   │
-│      (CDN)      │    │       (ALB)     │    │   (Sessions)    │
+│      (CDN)      │    │   (ALB + ECS)   │    │   (Sessions)    │
 │                 │    │                 │    │                 │
 │ • Static assets │    │ • SSL/TLS       │    │ • Session store │
 │ • Global edge   │    │ • Health checks │    │                 │
-│                 │    │                 │    │                 │
+│                 │    │ • ECS Fargate   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
