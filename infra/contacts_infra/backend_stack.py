@@ -135,7 +135,7 @@ class BackendStack(Stack):
             serverless_v2_min_capacity=0.5,
             serverless_v2_max_capacity=2,
             vpc=self.vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             storage_encrypted=True,
             backup=rds.BackupProps(retention=Duration.days(7), preferred_window="03:00-04:00"),
             deletion_protection=False,
