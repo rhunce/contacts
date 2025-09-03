@@ -32,15 +32,11 @@ Contacts Application Infrastructure Diagram
 │  │   Port 80/443   │     BACKEND API        │    Session Storage       │    │
 │  │                 │     Prisma ORM         │    Port 6379             │    │
 │  │                 │     Connect-Redis      │                          │    │
-│  │                 │     Port 3000          │                          │    │
-│  │                 │     Node.js/TS         │                          │    │
-│  │                 │     Express.js         │                          │    │
-│  │                 │                        │                          │    │
-│  │                 │   [AURORA POSTGRESQL]  │                          │    │
-│  │                 │   Database Cluster     │                          │    │
-│  │                 │   Serverless v2        │                          │    │
-│  │                 │   0.5-2 ACUs           │                          │    │
-│  │                 │   Write-Read Replica   │                          │    │
+│  │                 │     Port 3000          │    [AURORA POSTGRESQL]   │    │
+│  │                 │     Node.js/TS         │     Database Cluster     │    │
+│  │                 │     Express.js         │     Serverless v2        │    │
+│  │                 │                        │     0.5-2 ACUs           │    │
+│  │                 │                        │     Write-Read Replica   │    │
 │  │                 │                        │                          │    │
 │  └─────────────────┴────────────────────────┴──────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
