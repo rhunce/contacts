@@ -22,21 +22,27 @@ Contacts Application Infrastructure Diagram
                               ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                VPC                                          │
-│                    (172.16.0.0/16)                                          │
+│                          (172.16.0.0/16)                                    │
 │                                                                             │
-│  ┌─────────────────┬─────────────────┬─────────────────────────────────┐    │
-│  │   PUBLIC SUBNET │ PRIVATE SUBNET  │      ISOLATED SUBNET            │    │
-│  │   (Internet)    │  (NAT Gateway)  │      (No Internet)              │    │
-│  │                 │                 │                                 │    │
-│  │   [ALB]         │  [ECS FARGATE]  │   [AURORA POSTGRESQL]           │    │
-│  │   Port 80/443   │  [BACKEND API]  │   [Database Cluster]            │    │
-│  │                 │  Port 3000      │   [Serverless v2]               │    │
-│  │                 │  Node.js/TS     │   [0.5-2 ACUs]                  │    │
-│  │                 │  Express.js     │                                 │    │
-│  │                 │                 │   [ELASTICACHE REDIS]           │    │
-│  │                 │  [Prisma ORM]   │   [Session Storage]             │    │
-│  │                 │  [Connect-Redis]│   [Port 6379]                   │    │
-│  └─────────────────┴─────────────────┴─────────────────────────────────┘    │
+│  ┌─────────────────┬────────────────────────┬──────────────────────────┐    │
+│  │   PUBLIC SUBNET │     PRIVATE SUBNET     │      ISOLATED SUBNET     │    │
+│  │   (Internet)    │     (NAT Gateway)      │      (No Internet)       │    │
+│  │                 │                        │                          │    │
+│  │   [ALB]         │     [ECS FARGATE]      │   [ELASTICACHE REDIS]    │    │
+│  │   Port 80/443   │     BACKEND API        │    Session Storage       │    │
+│  │                 │     Prisma ORM         │    Port 6379             │    │
+│  │                 │     Connect-Redis      │                          │    │
+│  │                 │     Port 3000          │                          │    │
+│  │                 │     Node.js/TS         │                          │    │
+│  │                 │     Express.js         │                          │    │
+│  │                 │                        │                          │    │
+│  │                 │   [AURORA POSTGRESQL]  │                          │    │
+│  │                 │   Database Cluster     │                          │    │
+│  │                 │   Serverless v2        │                          │    │
+│  │                 │   0.5-2 ACUs           │                          │    │
+│  │                 │   Write-Read Replica   │                          │    │
+│  │                 │                        │                          │    │
+│  └─────────────────┴────────────────────────┴──────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 SECURITY GROUPS & NETWORKING

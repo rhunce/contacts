@@ -131,17 +131,17 @@ class BackendStack(Stack):
                 version=rds.AuroraPostgresEngineVersion.VER_15_4
             ),
             writer=rds.ClusterInstance.serverless_v2("writer"),
-            # Optional read replica:
-            # readers=[rds.ClusterInstance.serverless_v2("reader")],
+            readers=[rds.ClusterInstance.serverless_v2("reader")],
             serverless_v2_min_capacity=0.5,
             serverless_v2_max_capacity=2,
             vpc=self.vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             storage_encrypted=True,
             backup=rds.BackupProps(retention=Duration.days(7), preferred_window="03:00-04:00"),
             deletion_protection=False,
             removal_policy=RemovalPolicy.DESTROY,
             credentials=rds.Credentials.from_generated_secret("postgres"),
+            enable_data_api=True
         )
 
     

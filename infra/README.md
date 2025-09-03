@@ -39,7 +39,7 @@ The infrastructure is built on AWS using CDK (Cloud Development Kit) with the fo
 **Backend Stack:**
 - **Application Load Balancer (ALB)** - SSL termination and health checks
 - **Fargate** - Containerized backend with fixed capacity and load balancing
-- **RDS Aurora Serverless v2** - PostgreSQL database with encryption and 7-day backups
+- **RDS Aurora Serverless v2** - PostgreSQL database with write-read replica, encryption and 7-day backups
 - **ElastiCache Redis** - Session storage with TLS encryption
 - **VPC** - Private/public subnets with NAT Gateway for outbound internet access
 
