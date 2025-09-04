@@ -19,8 +19,8 @@ The ContactFolio infrastructure is built using AWS CDK (Cloud Development Kit) w
 
 ### Key Features
 - **Infrastructure as Code** with AWS CDK
-- **Containerized backend** with ECS Fargate
-- **Managed database** with RDS Aurora Serverless v2
+- **Containerized backend** with ECS Fargate (autoscaling)
+- **Managed database** with RDS Aurora Serverless v2 (autoscaling and read replica)
 - **Redis caching** with ElastiCache
 - **Global CDN** with CloudFront
 - **Load balancing** with Application Load Balancer
@@ -38,8 +38,8 @@ The infrastructure is built on AWS using CDK (Cloud Development Kit) with the fo
 
 **Backend Stack:**
 - **Application Load Balancer (ALB)** - SSL termination and health checks
-- **Fargate** - Containerized backend with fixed capacity and load balancing
-- **RDS Aurora Serverless v2** - PostgreSQL database with write-read replica, encryption and 7-day backups
+- **Fargate** - Containerized backend with load balancing and autoscaling
+- **RDS Aurora Serverless v2** - PostgreSQL database with autoscaling, write-read replica, encryption and 7-day backups
 - **ElastiCache Redis** - Session storage with TLS encryption
 - **VPC** - Private/public subnets with NAT Gateway for outbound internet access
 

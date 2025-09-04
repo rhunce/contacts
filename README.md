@@ -101,8 +101,8 @@ ContactFolio is a full-stack contact management application that provides real-t
 
 ### Infrastructure
 - **Cloud**: AWS CDK for Python
-- **Compute**: AWS Fargate
-- **Database**: Amazon RDS (PostgreSQL)
+- **Compute**: AWS Fargate (with autoscaling)
+- **Database**: Amazon RDS (PostgreSQL) (with autoscaling and read replica)
 - **Cache**: Amazon ElastiCache (Redis)
 - **CDN**: CloudFront & S3
 - **Load Balancer**: Application Load Balancer

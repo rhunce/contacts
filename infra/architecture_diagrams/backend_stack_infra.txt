@@ -29,14 +29,15 @@ Contacts Application Infrastructure Diagram
 │  │   (Internet)    │     (NAT Gateway)      │      (No Internet)       │    │
 │  │                 │                        │                          │    │
 │  │   [ALB]         │     [ECS FARGATE]      │   [ELASTICACHE REDIS]    │    │
-│  │   Port 80/443   │     BACKEND API        │    Session Storage       │    │
-│  │                 │     Prisma ORM         │    Port 6379             │    │
-│  │                 │     Connect-Redis      │                          │    │
-│  │                 │     Port 3000          │    [AURORA POSTGRESQL]   │    │
-│  │                 │     Node.js/TS         │     Database Cluster     │    │
-│  │                 │     Express.js         │     Serverless v2        │    │
-│  │                 │                        │     0.5-2 ACUs           │    │
-│  │                 │                        │     Write-Read Replica   │    │
+│  │   Port 80/443   │     Autoscaling        │    Session Storage       │    │
+│  │                 │     BACKEND API        │    Port 6379             │    │
+│  │                 │     Prisma ORM         │                          │    │
+│  │                 │     Connect-Redis      │   [AURORA POSTGRESQL]    │    │
+│  │                 │     Port 3000          │    Database Cluster      │    │
+│  │                 │     Node.js/TS         │    Autoscaling           │    │
+│  │                 │     Express.js         │    Write-Read Replica    │    │
+│  │                 │                        │    Serverless v2         │    │
+│  │                 │                        │    0.5-2 ACUs            │    │
 │  │                 │                        │                          │    │
 │  └─────────────────┴────────────────────────┴──────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
