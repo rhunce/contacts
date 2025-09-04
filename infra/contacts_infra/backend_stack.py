@@ -251,7 +251,7 @@ class BackendStack(Stack):
                 domain_zone=zone,
                 redirect_http=True,
                 protocol=elbv2.ApplicationProtocol.HTTPS,
-                desired_count=1,
+                desired_count=1,  # Initial count
                 cpu=256,
                 memory_limit_mib=512,
             )
@@ -264,7 +264,7 @@ class BackendStack(Stack):
                 public_load_balancer=True,
                 task_image_options=task_image_options,
                 protocol=elbv2.ApplicationProtocol.HTTP,
-                desired_count=1,
+                desired_count=1,  # Initial count
                 cpu=256,
                 memory_limit_mib=512,
             )
@@ -277,6 +277,37 @@ class BackendStack(Stack):
             timeout=Duration.seconds(5),
             healthy_threshold_count=2,
             unhealthy_threshold_count=3
+        )
+
+        # Configure Auto Scaling
+        scalable_target = fargate.service.auto_scale_task_count(
+            min_capacity=1,      # Minimum number of tasks (always running)
+            max_capacity=5       # Maximum number of tasks (prevents runaway scaling)
+        )
+
+        # Scale up when CPU usage is high
+        scalable_target.scale_on_cpu_utilization(
+            "CpuScaling",
+            target_utilization_percent=70,  # Scale up when CPU > 70%
+            scale_in_cooldown=Duration.minutes(5),   # Wait 5 min before scaling in
+            scale_out_cooldown=Duration.minutes(2)   # Wait 2 min before scaling out
+        )
+
+        # Scale up when memory usage is high
+        scalable_target.scale_on_memory_utilization(
+            "MemoryScaling",
+            target_utilization_percent=80,  # Scale up when memory > 80%
+            scale_in_cooldown=Duration.minutes(5),
+            scale_out_cooldown=Duration.minutes(2)
+        )
+
+        # Scale based on ALB request count
+        scalable_target.scale_on_request_count(
+            "RequestScaling",
+            requests_per_target=1000,       # Scale up when > 1000 requests per target
+            target_group=fargate.target_group,
+            scale_in_cooldown=Duration.minutes(5),
+            scale_out_cooldown=Duration.minutes(2)
         )
 
         # Grant secrets access
