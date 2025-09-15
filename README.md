@@ -20,7 +20,7 @@ ContactFolio is a full-stack contact management application that provides real-t
 
 ## 🌐 **Live Application**
 
-**[🚀 Try ContactFolio Now → https://contactfolio.com/](https://contactfolio.com/)** (TEMPORARILY TURNED OFF - CAN TURN BACK ON UPON REQUEST)
+~~**[🚀 Try ContactFolio Now → https://contactfolio.com/](https://contactfolio.com/)**~~ *(TEMPORARILY TURNED OFF - CAN TURN BACK ON UPON REQUEST)*
 
 *This is the production deployment of ContactFolio, demonstrating the full application in action.*
 
