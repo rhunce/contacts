@@ -131,7 +131,8 @@ class BackendStack(Stack):
                 version=rds.AuroraPostgresEngineVersion.VER_15_4
             ),
             writer=rds.ClusterInstance.serverless_v2("writer"),
-            readers=[rds.ClusterInstance.serverless_v2("reader")],
+            # NOTE: Commented out to save on cost
+            # readers=[rds.ClusterInstance.serverless_v2("reader")],
             serverless_v2_min_capacity=0.5,
             serverless_v2_max_capacity=2,
             vpc=self.vpc,
@@ -144,7 +145,6 @@ class BackendStack(Stack):
             enable_data_api=True
         )
 
-    
     def _create_redis(self) -> tuple[elasticache.CfnReplicationGroup, ec2.SecurityGroup]:
         """Create ElastiCache Redis cluster + SG and return both"""
         redis_security_group = ec2.SecurityGroup(

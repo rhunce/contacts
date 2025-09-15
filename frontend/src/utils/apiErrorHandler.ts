@@ -92,24 +92,4 @@ export class ApiErrorHandler {
     const message = this.extractErrorMessage(error) || this.handleStatusSpecificErrors(error, customMessages);
     return new Error(message);
   }
-
-  /**
-   * Check if an error is a specific type
-   */
-  static isErrorType(error: any, type: ErrorType): boolean {
-    if (error?.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-      return error.response.data.errors.some((err: any) => err.type === type);
-    }
-    return error?.response?.data?.type === type;
-  }
-
-  /**
-   * Get the first error field from a validation error response
-   */
-  static getFirstErrorField(error: any): string | undefined {
-    if (error?.response?.data?.errors && Array.isArray(error.response.data.errors) && error.response.data.errors.length > 0) {
-      return error.response.data.errors[0].field;
-    }
-    return undefined;
-  }
 }

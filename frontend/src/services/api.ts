@@ -16,7 +16,7 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
-// Use to add/modify headers, logging, or make any other request modifications
+// NOTE: Use to add/modify headers, logging, or make any other request modifications
 // api.interceptors.request.use(
 //   (config) => {
 //     // Add any request logging, headers, or modifications here

@@ -36,9 +36,7 @@ export function getErrorType(error: any): ErrorType | null {
 }
 
 export function getErrorMessage(error: any): string {
-  console.log('getErrorMessage called with:', error);
   const errorType = getErrorType(error);
-  console.log('Error type detected:', errorType);
   
   switch (errorType) {
     case ErrorType.USER_LIMIT_REACHED:

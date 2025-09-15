@@ -20,7 +20,7 @@ ContactFolio is a full-stack contact management application that provides real-t
 
 ## 🌐 **Live Application**
 
-**[🚀 Try ContactFolio Now → https://contactfolio.com/](https://contactfolio.com/)**
+**[🚀 Try ContactFolio Now → https://contactfolio.com/](https://contactfolio.com/)** (TEMPORARILY TURNED OFF - CAN TURN BACK ON UPON REQUEST)
 
 *This is the production deployment of ContactFolio, demonstrating the full application in action.*
 
@@ -63,13 +63,13 @@ ContactFolio is a full-stack contact management application that provides real-t
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   Database      │
 │   (Next.js)     │◄──►│   (Express.js)  │◄──►│   (PostgreSQL)  │
-│                 │    │                 │    │                 │
-│ • TypeScript    │    │ • TypeScript    │    │ • Prisma ORM    │
-│ • React         │    │ • REST API      │    │ • Indexing      │
-│ • Material-UI   │    │ • SSE Events    │    │ • Auto-scaling  │
-│                 │    │ • Redis         │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
+│                 │    │                 │  │ │                 │
+│ • TypeScript    │    │ • TypeScript    │  │ │ • Prisma ORM    │
+│ • React         │    │ • REST API      │  │ │ • Indexing      │
+│ • Material-UI   │    │ • SSE Events    │  │ │ • Auto-scaling  │
+│                 │    │ • Redis         │  │ │                 │
+└─────────────────┘    └─────────────────┘  │ └─────────────────┘
+         │                       │          │____________
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -88,7 +88,7 @@ ContactFolio is a full-stack contact management application that provides real-t
 - **Framework**: Next.js 14 with TypeScript & React
 - **UI Library**: Material-UI (MUI) v5
 - **State Management**: React Query (TanStack Query)
-- **Styling**: Emotion (CSS-in-JS)
+- **Styling**: Material-UI components with theme customization
 - **Testing**: Jest + React Testing Library
 
 ### Backend
@@ -192,11 +192,11 @@ The project uses GitHub Actions for continuous deployment:
 # Deploy infrastructure
 cd infra && cdk deploy
 
-# Deploy backend
-cd backend && npm run deploy
+# Build and test backend
+cd backend && npm run test:deploy
 
-# Deploy frontend
-cd frontend && npm run build && npm run deploy
+# Build frontend
+cd frontend && npm run build
 ```
 
 ## 🧪 Testing

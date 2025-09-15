@@ -19,10 +19,11 @@ def main():
     frontend_subdomain = os.getenv('FRONTEND_SUBDOMAIN', 'www')
     
     # AWS environment configuration
-    env = Environment(
-        account=os.getenv('CDK_DEFAULT_ACCOUNT'),
-        region=os.getenv('CDK_DEFAULT_REGION', 'us-east-1')
-    )
+    # NOTE: AWS CDK grabs this info from os under the hood. These are set in our os via our ci-cd.
+    # env = Environment(
+    #     account=os.getenv('CDK_DEFAULT_ACCOUNT'),
+    #     region=os.getenv('CDK_DEFAULT_REGION', 'us-east-1')
+    # )
     
     # Create CDK app
     app = App()
@@ -33,7 +34,7 @@ def main():
         f"{app_name}BackendStack",
         app_name=app_name,
         root_domain=root_domain,
-        env=env
+        # env=env
     )
     
     # Deploy frontend stack
@@ -43,7 +44,7 @@ def main():
         app_name=app_name,
         root_domain=root_domain,
         frontend_subdomain=frontend_subdomain,
-        env=env
+        # env=env
     )
     
     # Add dependency: frontend depends on backend
